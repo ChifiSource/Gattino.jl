@@ -1,0 +1,8 @@
+name = "Prrty"
+uuid = "5e0563f6-c9f2-4201-841a-25eb121ea3be"
+authors = ["emmett "]
+version = "0.1.0"
+
+[deps]
+Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
+Mux = "a975b10e-0019-58db-a62f-e48ff68538c9"
