@@ -98,7 +98,12 @@ function pane(name::String)
 end
 
 function update!(cm::ComponentModifier, ppane::Component, plot)
-    set_children!(cm, ppane.name, components(PrrtyPlot(plot)))
+    io::IOBuffer = IOBuffer();
+    show(io, "text/html", plot)
+    data::String = String(io.data)
+    data = replace(data,
+     """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n""" => "")
+    set_text!(cm, ppane.name, data)
 end
 
 function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
@@ -123,5 +128,5 @@ function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
 end
 
 function textbox()
-    
+
 end
