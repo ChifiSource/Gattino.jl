@@ -53,7 +53,8 @@ mutable struct DashBoard <: Servable
             push!(page_div, pages[1])
             navbar::Component = nav(pages, c, anim_out())
             write!(c, stylesvs)
-            write!(c, navbar, page_div)
+            write!(c, navbar)
+            write!(c, page_div)
         end
         new(pages, f, nav, stylesheet, name)::DashBoard
     end
