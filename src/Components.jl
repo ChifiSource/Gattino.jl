@@ -53,7 +53,7 @@ mutable struct DashBoard <: Servable
             write!(c, stylesvs)
             write!(c, navbar, page_div)
         end
-        new(pages, f, nav, stylesheet, name)::Dashboard
+        new(pages, f, nav, stylesheet, name)::DashBoard
     end
 end
 
