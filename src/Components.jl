@@ -1,5 +1,5 @@
 function anim_pagein()
-    anim = Animation("page_in")
+    anim = Animation("page_in", length = 1.5)
     anim[:from] = "opacity" => "0%"
     anim[:from] = "transform" => "translateY(100%)"
     anim[:to] = "opacity" => "100%"
@@ -8,7 +8,7 @@ function anim_pagein()
 end
 
 function anim_pageout()
-    anim = Animation("page_out")
+    anim = Animation("page_out", length = 1.5)
     anim[:from] = "opacity" => "100%"
     anim[:from] = "transform" => "translateY(0%)"
     anim[:to] = "opacity" => "0%"
@@ -32,9 +32,15 @@ mutable struct DashBoard <: Servable
         anim_out::Function = anim_pageout,
         name::String = "Prrty Dashboard",
         nav::Function = prrty_nav1,
+        header_image::String = "/favicon.png",
         stylesheet::Vector{Servable} = components(h1_style()))
         push!(stylesheet, anim_in(), anim_out())
         f(c::Connection) = begin
+            body::Component = Component("mainbody", "body")
+            style!(body, "background-color" => "#F6B902")
+            header::Component = divider("head", align = "center")
+            push!(header, img("headerimg", src = header_image))
+            push!(header, h("pagetitle", 2, text = name))
             boardtitle::Component = title("boardtitle", text = name)
             push!(stylesheet, boardtitle)
             page_div::Component = divider("page_div")
@@ -42,20 +48,22 @@ mutable struct DashBoard <: Servable
             [push!(stylesvs, sty) for sty in stylesheet]
             page_div["out"] = "false"
             page_div["active"] = pages[1].name
+            animate!(page_div, anim_in())
             on(c, page_div, "animationend") do cm::ComponentModifier
                 if cm[page_div]["out"] == "true"
                     active = page_div["active"]
                     set_children!(cm, page_div, components(pages[active]))
                     cm[page_div] = "out" => "false"
                     animate!(cm, page_div, anim_in())
+                    style!(cm, "page_div", "opacity" => "100%")
                 end
             end
             style!(page_div, "background-color" => "#1c2e4a")
             push!(page_div, pages[1])
             navbar::Component = nav(pages, c, anim_out())
             write!(c, stylesvs)
-            write!(c, navbar)
-            write!(c, page_div)
+            push!(body, header, navbar, page_div)
+            write!(c, body)
         end
         new(pages, f, nav, stylesheet, name)::DashBoard
     end
@@ -79,6 +87,7 @@ function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
             cm["page_div"] = "out" => "true"
             cm["boardtitle"] = "text" => p.name
             cm["page_div"] = "active" => p.name
+            style!(cm, "page_div", "opacity" => "0%")
             animate!(cm, "page_div", animout)
         end
         push!(navdiv, pagebutton)
