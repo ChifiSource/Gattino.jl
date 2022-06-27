@@ -54,7 +54,6 @@ mutable struct DashBoard <: Servable
             on(c, page_div, "animationend") do cm::ComponentModifier
                 if cm[page_div]["out"] == "true"
                     active = page_div["active"]
-                    set_children!(cm, page_div, components(pages[active]))
                     cm[page_div] = "out" => "false"
                     animate!(cm, page_div, anim_in())
                     style!(cm, "page_div", "opacity" => "100%")
@@ -90,6 +89,7 @@ function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
             cm["boardtitle"] = "text" => p.name
             cm["page_div"] = "active" => p.name
             style!(cm, "page_div", "opacity" => "0%")
+            set_children!(cm, page_div, components(p))
             animate!(cm, "page_div", animout)
         end
         push!(navdiv, pagebutton)
