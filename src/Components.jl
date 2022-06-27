@@ -33,14 +33,15 @@ mutable struct DashBoard <: Servable
         name::String = "Prrty Dashboard",
         nav::Function = prrty_nav1,
         header_image::String = "/favicon.png",
-        stylesheet::Vector{Servable} = components(h1_style()))
+        stylesheet::Vector{Servable} = components(h1_style()),
+        bg_color::String = "#DCE8F1")
         push!(stylesheet, anim_in(), anim_out())
         f(c::Connection) = begin
             body::Component = Component("mainbody", "body")
-            style!(body, "background-color" => "#F6B902")
+            style!(body, "background-color" => bg_color)
             header::Component = divider("head", align = "center")
             push!(header, img("headerimg", src = header_image))
-            push!(header, h("pagetitle", 2, text = name))
+            push!(header, h("pagetitle", 1, text = name))
             boardtitle::Component = title("boardtitle", text = name)
             push!(stylesheet, boardtitle)
             page_div::Component = divider("page_div")
@@ -60,7 +61,7 @@ mutable struct DashBoard <: Servable
                 end
             end
             style!(page_div, "background-color" => "#1c2e4a",
-            "border-radius" => "15px")
+            "border-radius" => "15px", "padding" = "20px")
             push!(page_div, pages[1])
             navbar::Component = nav(pages, c, anim_out())
             write!(c, stylesvs)
@@ -75,6 +76,34 @@ function page(name::String, contents::Vector{Servable})
     pagediv::Component = divider(name)
     pagediv[:children] = contents
     pagediv::Component
+end
+
+mutable struct PrrtyPlot <: Servable
+    plot::Any
+    f::Function
+    function Plot(plot::Any)
+        f(c::Connection) = begin
+            write!(c, sprint(show, "text/html", p))
+        end
+        new(plot, f)
+    end
+end
+
+function plotpane(name::String, plot::Any; args ...)
+    plot_div = divider(name, args)
+    style!(plot_div, "float" => "left", "margin" => "5px")
+    push!(plot_div, PrrtyPlot(plot))
+    plot_div
+end
+
+function pane(name::String, args ...)
+    pane_div = divider(name, args)
+    style!(pane_div, "float" => "left", "margin" => "5px")
+    pane_div
+end
+
+function update!(cm::ComponentModifier, ppane::Component, plot::Any)
+    set_children!(cm, ppane.name, components(PrrtyPlot(plot)))
 end
 
 function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
