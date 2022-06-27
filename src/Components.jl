@@ -86,6 +86,8 @@ mutable struct PrrtyPlot <: Servable
             io = IOBuffer();
             show(io, "text/html", plot)
             data = String(io.data)
+            data = replace(data,
+             """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n""" => "")
             write!(c, data)
         end
         new(plot, f)
