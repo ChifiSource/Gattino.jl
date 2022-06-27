@@ -89,7 +89,7 @@ function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
             cm["boardtitle"] = "text" => p.name
             cm["page_div"] = "active" => p.name
             style!(cm, "page_div", "opacity" => "0%")
-            set_children!(cm, page_div, components(p))
+            set_children!(cm, "page_div", components(p))
             animate!(cm, "page_div", animout)
         end
         push!(navdiv, pagebutton)
