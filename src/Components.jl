@@ -81,7 +81,7 @@ end
 mutable struct PrrtyPlot <: Servable
     plot::Any
     f::Function
-    function Plot(plot::Any)
+    function Plot(plot)
         f(c::Connection) = begin
             write!(c, sprint(show, "text/html", p))
         end
@@ -89,7 +89,7 @@ mutable struct PrrtyPlot <: Servable
     end
 end
 
-function plotpane(name::String, plot::Any)
+function plotpane(name::String, plot)
     plot_div = divider(name)
     style!(plot_div, "float" => "left", "margin" => "5px")
     push!(plot_div, PrrtyPlot(plot))
@@ -102,7 +102,7 @@ function pane(name::String)
     pane_div
 end
 
-function update!(cm::ComponentModifier, ppane::Component, plot::Any)
+function update!(cm::ComponentModifier, ppane::Component, plot)
     set_children!(cm, ppane.name, components(PrrtyPlot(plot)))
 end
 
