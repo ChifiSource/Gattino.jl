@@ -48,7 +48,9 @@ mutable struct DashBoard <: Servable
             [push!(stylesvs, sty) for sty in stylesheet]
             page_div["out"] = "false"
             page_div["active"] = pages[1].name
-            animate!(page_div, anim_in())
+            pdivs = Style("div")
+            animate!(pdivs, anim_in())
+            push!(stylesvs, pdivs)
             on(c, page_div, "animationend") do cm::ComponentModifier
                 if cm[page_div]["out"] == "true"
                     active = page_div["active"]
