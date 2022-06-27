@@ -45,7 +45,7 @@ mutable struct DashBoard <: Servable
             on(c, page_div, "animationend") do cm::ComponentModifier
                 if cm[page_div]["out"] == "true"
                     active = page_div["active"]
-                    set_children!(page_div, components(pages[active]))
+                    set_children!(cm, page_div, components(pages[active]))
                     cm[page_div] = "out" => "false"
                     animate!(cm, page_div, anim_in)
                 end
@@ -62,7 +62,7 @@ mutable struct DashBoard <: Servable
 end
 
 function page(name::String, contents::Vector{Servable})
-    pagediv::Component = divider("page$name")
+    pagediv::Component = divider(name)
     pagediv[:children] = contents
     pagediv::Component
 end
