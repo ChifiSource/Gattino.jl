@@ -36,7 +36,7 @@ mutable struct DashBoard <: Servable
         stylesheet::Vector{Servable} = components(h1_style()),
         bg_color::String = "#DCE8F1")
         push!(stylesheet, anim_in(), anim_out())
-        f(c::Connection) = begin
+        f(c::AbstractConnection) = begin
             body::Component = Component("mainbody", "body")
             style!(body, "background-color" => bg_color)
             header::Component = divider("head", align = "center")
@@ -82,7 +82,7 @@ mutable struct PrrtyPlot <: Servable
     plot::Any
     f::Function
     function PrrtyPlot(plot)
-        f(c::Connection) = begin
+        f(c::AbstractConnection) = begin
             write!(c, sprint(show, "text/html", p))
         end
         new(plot, f)
