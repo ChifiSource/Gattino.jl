@@ -28,8 +28,8 @@ mutable struct DashBoard <: Servable
     stylesheet::Vector{Servable}
     title::String
     function DashBoard(pages::Vector{Servable};
-        anim_in::Animation = anim_pagein(),
-        anim_out::Animation = anim_pageout(),
+        anim_in::Function = anim_pagein,
+        anim_out::Function = anim_pageout,
         name::String = "Prrty Dashboard",
         nav::Function = prrty_nav1,
         stylesheet::Vector{Servable} = components(h1_style()))
