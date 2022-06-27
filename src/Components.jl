@@ -89,15 +89,15 @@ mutable struct PrrtyPlot <: Servable
     end
 end
 
-function plotpane(name::String, plot::Any; args ...)
-    plot_div = divider(name, args)
+function plotpane(name::String, plot::Any)
+    plot_div = divider(name)
     style!(plot_div, "float" => "left", "margin" => "5px")
     push!(plot_div, PrrtyPlot(plot))
     plot_div
 end
 
-function pane(name::String, args ...)
-    pane_div = divider(name, args)
+function pane(name::String)
+    pane_div = divider(name)
     style!(pane_div, "float" => "left", "margin" => "5px")
     pane_div
 end
