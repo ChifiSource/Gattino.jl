@@ -37,8 +37,10 @@ mutable struct DashBoard <: Servable
         f(c::Connection) = begin
             boardtitle::Component = title("boardtitle", text = name)
             page_div::Component = divider("page_div")
-            stylesvs::Vector{Servable} = Vector{Servable}(
-                                                [sty for sty in stylesheet])
+            stylesvs::Vector{Servable} = Vector{Servable}()
+            [push!(stylesvs, sty) for sty in stylesheet]
+            page_div["out"] = "false"
+            page_div["active"] = pages[1].name
             on(c, page_div, "animationend") do cm::ComponentModifier
                 if cm[page_div]["out"] == "true"
                     active = page_div["active"]
