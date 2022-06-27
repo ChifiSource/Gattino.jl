@@ -1,4 +1,4 @@
-function anim_pageout()
+function anim_pagein()
     anim = Animation("page_in")
     anim[:from] = "opacity" => "0%"
     anim[:from] = "transform" => "translateY(100%)"
@@ -7,8 +7,8 @@ function anim_pageout()
     anim
 end
 
-function anim_pagein()
-    anim = Animation("page_in")
+function anim_pageout()
+    anim = Animation("page_out")
     anim[:from] = "opacity" => "100%"
     anim[:from] = "transform" => "translateY(0%)"
     anim[:to] = "opacity" => "0%"
@@ -47,7 +47,7 @@ mutable struct DashBoard <: Servable
                     active = page_div["active"]
                     set_children!(cm, page_div, components(pages[active]))
                     cm[page_div] = "out" => "false"
-                    animate!(cm, page_div, anim_in)
+                    animate!(cm, page_div, anim_in())
                 end
             end
             style!(page_div, "background-color" => "#1c2e4a")
