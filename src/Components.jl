@@ -64,7 +64,7 @@ function page(name::String, contents::Vector{Servable})
 end
 
 function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
-    navdiv::Component = div("navdiv", align = "center")
+    navdiv::Component = divider("navdiv", align = "center")
     style!(navdiv, "background-color" => "lightblue")
     for p in pages
         pagebutton::Component = button("nav$(p.name)", padding = "10px",
