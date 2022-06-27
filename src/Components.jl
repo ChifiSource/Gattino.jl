@@ -83,7 +83,10 @@ mutable struct PrrtyPlot <: Servable
     f::Function
     function PrrtyPlot(plot)
         f(c::AbstractConnection) = begin
-            write!(c, sprint(show, "text/html", p))
+            io = IOBuffer();
+            show(io, "text/html", plot)
+            data = String(io.data)
+            write!(c, data)
         end
         new(plot, f)
     end
