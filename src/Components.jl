@@ -59,7 +59,8 @@ mutable struct DashBoard <: Servable
                     style!(cm, "page_div", "opacity" => "100%")
                 end
             end
-            style!(page_div, "background-color" => "#1c2e4a")
+            style!(page_div, "background-color" => "#1c2e4a",
+            "border-radius" => "15px")
             push!(page_div, pages[1])
             navbar::Component = nav(pages, c, anim_out())
             write!(c, stylesvs)
@@ -78,12 +79,12 @@ end
 
 function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
     navdiv::Component = divider("navdiv", align = "center")
-    style!(navdiv, "background-color" => "lightblue")
     for p in pages
         pagebutton::Component = button("nav$(p.name)", padding = "10px",
         color = "white", text = p.name)
         style!(pagebutton, "background-color" => "#23395d", "color" => "white",
-        "font-size" => "15pt", "bold" => "true")
+        "font-size" => "20pt", "font-weight" => "bold",
+        "border-radius" => "15px")
         on(c, pagebutton, "click") do cm::ComponentModifier
             cm["page_div"] = "out" => "true"
             cm["boardtitle"] = "text" => p.name
