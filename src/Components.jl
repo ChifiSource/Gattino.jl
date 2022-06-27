@@ -81,7 +81,7 @@ end
 mutable struct PrrtyPlot <: Servable
     plot::Any
     f::Function
-    function Plot(plot)
+    function PrrtyPlot(plot)
         f(c::Connection) = begin
             write!(c, sprint(show, "text/html", p))
         end
