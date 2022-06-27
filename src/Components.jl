@@ -92,7 +92,7 @@ end
 function plotpane(name::String, plot)
     plot_div = divider(name)
     style!(plot_div, "float" => "left", "margin" => "5px")
-    plot_div[:children] = Vector{Servable}(PrrtyPlot(plot)))
+    plot_div[:children] = Vector{Servable}(PrrtyPlot(plot))
     plot_div
 end
 
