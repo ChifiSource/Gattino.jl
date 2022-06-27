@@ -1,8 +1,8 @@
 name = "Prrty"
-uuid = "5e0563f6-c9f2-4201-841a-25eb121ea3be"
-authors = ["emmett "]
+uuid = "1e0930c6-beb1-4858-b15e-f37eb5a020c2"
+authors = ["emmac <emmettgb@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
-Mux = "a975b10e-0019-58db-a62f-e48ff68538c9"
+Toolips = "a47e2ad8-fcf7-417c-9746-32b9bdf220bd"
+ToolipsSession = "2fe55384-55bc-4df3-9d59-c817d405cd05"
