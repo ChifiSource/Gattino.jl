@@ -48,7 +48,7 @@ mutable struct DashBoard <: Servable
                 end
             end
             style!(page_div, "background-color" => "#1c2e4a")
-            push!(page_div, components(pages[1]))
+            push!(page_div, pages[1])
             navbar::Component = nav(pages, c, anim_out())
             write!(c, stylesvs)
             write!(c, navbar, page_div)
