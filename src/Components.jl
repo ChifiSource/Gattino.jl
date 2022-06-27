@@ -79,31 +79,20 @@ function page(name::String, contents::Vector{Servable})
     pagediv::Component
 end
 
-mutable struct PrrtyPlot <: Servable
-    plot::Any
-    f::Function
-    function PrrtyPlot(plot)
-        f(c::AbstractConnection) = begin
-            io = IOBuffer();
-            show(io, "text/html", plot)
-            data = String(io.data)
-            data = replace(data,
-             """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n""" => "")
-            write!(c, data)
-        end
-        new(plot, f)
-    end
-end
-
 function plotpane(name::String, plot)
-    plot_div = divider(name)
+    plot_div::Component = divider(name)
     style!(plot_div, "float" => "left", "margin" => "5px")
-    push!(plot_div[:children], PrrtyPlot(plot))
+    io::IOBuffer = IOBuffer();
+    show(io, "text/html", plot)
+    data::String = String(io.data)
+    data = replace(data,
+     """<?xml version=\"1.0\" encoding=\"utf-8\"?>\n""" => "")
+    plot_div[:text] = data
     plot_div
 end
 
 function pane(name::String)
-    pane_div = divider(name)
+    pane_div::Component = divider(name)
     style!(pane_div, "float" => "left", "margin" => "5px")
     pane_div
 end
@@ -131,4 +120,8 @@ function prrty_nav1(pages::Vector{Servable}, c::Connection, animout::Animation)
         push!(navdiv, pagebutton)
     end
     navdiv::Component
+end
+
+function textbox()
+    
 end
