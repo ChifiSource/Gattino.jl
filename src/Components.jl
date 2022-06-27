@@ -26,7 +26,7 @@ mutable struct DashBoard <: Servable
     f::Function
     nav::Function
     stylesheet::Vector{Servable}
-    title::String
+    name::String
     function DashBoard(pages::Vector{Servable};
         anim_in::Function = anim_pagein,
         anim_out::Function = anim_pageout,
@@ -53,7 +53,7 @@ mutable struct DashBoard <: Servable
             write!(c, stylesvs)
             write!(c, navbar, page_div)
         end
-        new(pages, f, nav, stylesheet, title)::Dashboard
+        new(pages, f, nav, stylesheet, name)::Dashboard
     end
 end
 
