@@ -278,7 +278,7 @@ Creates a number input component.
 """
 function numberinput(name::String, range::UnitRange = 1:10; value::Integer = 5)
     input(name, type = "number", min = range[1], max = range[2],
-    selected = value, oninput = "`this.setAttribute('selected',this.value);`")
+    selected = value, oninput = "\"this.setAttribute('selected',this.value);\"")
 end
 
 """
@@ -296,7 +296,7 @@ function rangeslider(name::String, range::UnitRange = 1:100;
     input(name, type = "range", min = string(minimum(range)),
      max = string(maximum(range)), value = value, selected = value,
             step = step,
-            oninput = "`this.setAttribute('selected',this.value);`")
+            oninput = "\"this.setAttribute('selected',this.value);\"")
 end
 
 """
