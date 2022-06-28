@@ -291,8 +291,9 @@ Creates a range slider component.
 ```
 """
 function rangeslider(name::String, range::UnitRange = 1:100;
-                    value::Integer = 50)
-    input(name, type = "range", min = range[1], max = range[2], value = value)
+                    value::Integer = 50, step::Integer = 5)
+    input(name, type = "range", min = range[1], max = range[2], value = value,
+            step = step)
 end
 
 """
