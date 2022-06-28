@@ -282,7 +282,7 @@ end
 
 """
 **Prrty Components**
-### rangeslider(name::String, range::UnitRange = 1:100; value::Integer = 50) -> ::Component
+### rangeslider(name::String, range::UnitRange = 1:100; value::Integer = 50, step::Integer = 5) -> ::Component
 ------------------
 Creates a range slider component.
 #### example
@@ -292,7 +292,8 @@ Creates a range slider component.
 """
 function rangeslider(name::String, range::UnitRange = 1:100;
                     value::Integer = 50, step::Integer = 5)
-    input(name, type = "range", min = range[1], max = range[2], value = value,
+    input(name, type = "range", min = string(minimum(range)),
+     max = string(maximum(range)), value = value,
             step = step)
 end
 
