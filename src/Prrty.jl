@@ -18,5 +18,6 @@ function new_project(name::String)
      Pkg.activate(name)
      Pkg.add(url = "https://github.com/ChifiSource/Prrty.jl.git")
 end
-
+export new_project, DashBoard, plotpane, pane, page, textbox, containertextbox
+export numberinput, rangeslider, update!
 end # module
