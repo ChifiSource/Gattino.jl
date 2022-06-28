@@ -294,7 +294,7 @@ function rangeslider(name::String, range::UnitRange = 1:100;
                     value::Integer = 50, step::Integer = 5)
     input(name, type = "range", min = string(minimum(range)),
      max = string(maximum(range)), value = value,
-            step = step)
+            step = step, oninput = "this.value = this.value")
 end
 
 """
