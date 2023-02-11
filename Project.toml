@@ -1,8 +1,9 @@
 name = "Prrty"
-uuid = "1e0930c6-beb1-4858-b15e-f37eb5a020c2"
+uuid = "f0fb3ee5-f608-41f3-a42d-dac276373afc"
 authors = ["emmac <emmettgb@gmail.com>"]
 version = "0.1.0"
 
 [deps]
 Toolips = "a47e2ad8-fcf7-417c-9746-32b9bdf220bd"
-ToolipsSession = "2fe55384-55bc-4df3-9d59-c817d405cd05"
+ToolipsMarkdown = "33f7ff50-f2f2-41f0-8a96-482dce5c1514"
+ToolipsSVG = "8ae86ec9-919d-4ece-9a6d-09b7d28dae11"
