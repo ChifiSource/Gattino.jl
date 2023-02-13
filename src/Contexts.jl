@@ -14,17 +14,33 @@ end
 
 function context!(f::Function, window::Component{:svg},
     margin::Pair{Int64, Int64} = 0 => 0)
+    context::Context = Context(window, margin)
+    f(context)
+end
+
+function line!(context::Context, n::Int64)
 
 end
 
-function grid!(window::Component{:svg}; styles::Pair{String, String} ...)
+function grid!(context::Context, n::Int64;
+    styles::Pair{String, String} ...)
+    [begin
+
+    end for (xcoord, ycoord) in zip()]
+end
+
+function points!(context::Context, x::Vector{<:Number}, y::Vector{<:Number},
+     styles::Pair{String, String} ...)
+    circs::Vector{Servable} = Vector{Servable}([begin
+
+    end for point in zip(x, y)])
+end
+
+function trendline!(context::Context, styles::Pair{String, String} ...)
 
 end
 
-function points!(window::Component{:svg}, styles::Pair{String, String} ...)
 
-end
-
-function trendline!(window::Component{:svg}, styles::Pair{String, String} ...)
+function histo!(x::)
 
 end
