@@ -12,19 +12,20 @@ function grid!(con::Context, n::Int64 = 4, styles::Pair{String, <:Any} ...)
     step = division_amountx), range(1 + con.margin[2], con.dim[2], step = division_amounty))]
 end
 
-function points!(context::Context, x::Vector{<:Number}, y::Vector{<:Number},
-     p::Pair{String, Any} ...; args ...)
+function points!(con::Context, x::Vector{<:Number}, y::Vector{<:Number},
+     styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "orange", "stroke" => "lightblue", "stroke-width" => "0")
+    end
+    xmax::Number, ymax::Number = maximum(x), maximum(y)
      percvec_x = map(n::Number -> n / xmax, x)
      percvec_y = map(n::Number -> n / ymax, y)
-     xmax::Number, ymax::Number = maximum(x), maximum(y)
-    circs::Vector{Servable} = Vector{Servable}([begin
-        context.n += 1
-        circle("context$(context.n)", cx = string(pointx), cy = string(pointy), p...,
-        args ...)
-    end for (pointx, pointy) in zip(x, y)])
-    context.window[:children] = vcat(context.window[:children], circs)
+    [begin
+        c = circle(randstring(), cx = string(pointx * con.dim[1]), cy = string(pointy * con.dim[2]), r = "5")
+            style!(c, styles ...)
+            draw!(con, [c])
+        end for (pointx, pointy) in zip(percvec_x, percvec_y)]
 end
-
 function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
