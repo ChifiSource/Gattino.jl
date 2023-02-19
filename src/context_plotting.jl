@@ -1,15 +1,15 @@
-function grid!(context::Context, n::Int64 = 4)
-    division_amountx::Int64 = context.dim[1] / n
-    division_amounty::Int64 = context.dim[2] / n
-    push!(contexts.layers, context.)
-    context.n += length(xlines)
-    xlines = Vector{Servable}([begin
-        l::Component{:line} = line("context$(context.n)",
-        "x1" => string(xcoord), "y1" => string(context.dim[2]),
-        "x2" => string(xcoord), "y2" => string(0 + context.margin[2]))
-    end for xcoord in range(1 + context.margin[1], context.dim[1],
-    step = division_amountx)])
-
+function grid!(con::Context, n::Int64 = 4, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "lightblue", "stroke-width" => "1", "opacity" => 80percent)
+    end
+    division_amountx::Int64 = round(con.dim[1] / n)
+    division_amounty::Int64 = round(con.dim[2] / n)
+    [begin
+        line!(con, xcoord => 0, xcoord => con.dim[2], styles ...)
+        line!(con, 0 => ycoord, con.dim[1] => ycoord, styles ...)
+    end for (xcoord, ycoord) in zip(
+    range(1 + con.margin[1], con.dim[1],
+    step = division_amountx), range(1 + con.margin[2], con.dim[2], step = division_amounty))]
 end
 
 function points!(context::Context, x::Vector{<:Number}, y::Vector{<:Number},
