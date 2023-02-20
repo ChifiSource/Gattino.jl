@@ -177,6 +177,12 @@ git-tree-sha1 = "79f5dc8a1b0b678260865acdc2c002aab4a53101"
 uuid = "a47e2ad8-fcf7-417c-9746-32b9bdf220bd"
 version = "0.2.3"
 
+[[deps.ToolipsDefaults]]
+deps = ["Toolips", "ToolipsSession"]
+git-tree-sha1 = "513c9d3bfc7268dc820ac77dffdd85877b070ddf"
+uuid = "1710be6b-e895-498d-ba35-e3ff0dac7995"
+version = "0.1.0"
+
 [[deps.ToolipsMarkdown]]
 deps = ["Markdown", "Toolips"]
 git-tree-sha1 = "9248ccc0d0114e73a0169b2687a6d27199fb722d"
