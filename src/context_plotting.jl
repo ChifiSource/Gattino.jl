@@ -28,12 +28,12 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
     my = con.margin[2]
     division_amountx::Int64 = round((con.dim[1]) / n)
     division_amounty::Int64 = round((con.dim[2]) / n)
-    (begin
-        line!(con, xcoord + mx => 0 + my, xcoord + mx => con.dim[2] + mx, styles ...)
+    [begin
+        line!(con, xcoord + mx => 0 + my, xcoord + mx => con.dim[2] + my, styles ...)
         line!(con, 0 + mx => ycoord + my, con.dim[1] + mx => ycoord + my, styles ...)
     end for (xcoord, ycoord) in zip(
     range(1, con.dim[1],
-    step = division_amountx), range(1, con.dim[2], step = division_amounty)))
+    step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
 function labled_grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} ...)
@@ -58,14 +58,14 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
         styles = ("fill" => "orange", "stroke" => "lightblue", "stroke-width" => "0")
     end
     xmax::Number, ymax::Number = maximum(x), maximum(y)
-     percvec_x::Vector{Float64} = map(n::Number -> n / xmax, x)
-     percvec_y::Vector{Float64} = map(n::Number -> n / ymax, y)
-    (begin
+     percvec_x = map(n::Number -> n / xmax, x)
+     percvec_y = map(n::Number -> n / ymax, y)
+    [begin
         c = circle(randstring(), cx = string(pointx * con.dim[1] + con.margin[1]),
-                cy = string(pointy * con.dim[2] + con.margin[2]), r = "5")
+                cy = string(con.dim[2] - (pointy * con.dim[2] + con.margin[2])), r = "5")
             style!(c, styles ...)
             draw!(con, [c])
-        end for (pointx, pointy) in zip(percvec_x, percvec_y))
+        end for (pointx, pointy) in zip(percvec_x, percvec_y)]
 end
 
 function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
