@@ -1,4 +1,4 @@
-<div align="center"><img src="https://github.com/ChifiSource/Prrty.jl/blob/main/assets/prrt500.png" width = 250 />
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/toolips/prrty.png" width = 250 />
 <h6>elegant plots and dashboards</h6>
 </div>
 <div align="left">
