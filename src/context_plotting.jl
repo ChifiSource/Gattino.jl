@@ -80,9 +80,9 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     ystep = round(maximum(y) / n)
 
     [begin
+        cx += 1
         text!(con, xcoord + mx, con.dim[2] - 10 + my, unique_strings[round(cx)], styles ...)
         text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
-        cx += 1
         cy -= ystep
     end for (xcoord, ycoord) in zip(
             range(1, con.dim[1], step = division_amountx),
