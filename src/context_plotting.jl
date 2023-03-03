@@ -45,7 +45,7 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     cx = 0
     xstep = round(maximum(x) / n)
     ystep = round(maximum(y) / n)
-    cy = maximum(y) - ystep
+    cy = maximum(y)
         [begin
         text!(con, xcoord + mx, con.dim[2] - 10 + my, string(cx), styles ...)
         text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
@@ -73,7 +73,7 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     cx = 1
     xstep = 1
     ystep = round(maximum(y) / n)
-    cy = maximum(y) - ystep
+    cy = maximum(y)
 
     [begin
         if cx <= length(unique_strings)
@@ -83,7 +83,7 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
         cx += xstep
         cy -= ystep
     end for (xcoord, ycoord) in zip(
-            range(1, con.dim[1], step = division_amountx),
+            range(divisionamountx, con.dim[1], step = division_amountx),
             range(1, con.dim[2], step = division_amounty))]
 end
 
