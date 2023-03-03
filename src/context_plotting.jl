@@ -11,7 +11,6 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     unique_strings = unique(x)
     string_map = Dict(unique_strings[i] => i for i in 1:length(unique_strings))
     numeric_x = [string_map[s] for s in x]
-
     xmax::Number, ymax::Number = maximum(numeric_x), maximum(y)
     percvec_x = map(n::Number -> n / xmax, numeric_x)
     percvec_y = map(n::Number -> n / ymax, y)
@@ -44,9 +43,9 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     x_offset = division_amountx / 2
     y_offset = division_amounty / 2
     cx = 0
-    cy = maximum(y)
     xstep = round(maximum(x) / n)
     ystep = round(maximum(y) / n)
+    cy = maximum(y) - ystep
         [begin
         text!(con, xcoord + mx, con.dim[2] - 10 + my, string(cx), styles ...)
         text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
@@ -72,9 +71,9 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     x_offset = division_amountx / 2
     y_offset = division_amounty / 2
     cx = 1
-    cy = maximum(y)
     xstep = 1
     ystep = round(maximum(y) / n)
+    cy = maximum(y) - ystep
 
     [begin
         if cx <= length(unique_strings)
