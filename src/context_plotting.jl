@@ -83,7 +83,7 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
         cx += xstep
         cy -= ystep
     end for (xcoord, ycoord) in zip(
-            range(divisionamountx, con.dim[1], step = division_amountx),
+            range(division_amountx, con.dim[1], step = division_amountx),
             range(1, con.dim[2], step = division_amounty))]
 end
 
