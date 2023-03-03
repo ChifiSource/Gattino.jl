@@ -74,7 +74,7 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     division_amounty::Int64 = round((con.dim[2]) / n)
     x_offset = division_amountx / 2
     y_offset = division_amounty / 2
-    cx = 1
+    cx = 0
     cy = maximum(y)
     xstep = round(maximum(numeric_x) / n)
     ystep = round(maximum(y) / n)
@@ -87,6 +87,11 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     end for (xcoord, ycoord) in zip(
             range(1, con.dim[1], step = division_amountx),
             range(1, con.dim[2], step = division_amounty))]
+end
+
+function gridlabels!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any} ...)
+    gridlabels!(con, [string(v) for v in x], y, n, styles ...)
 end
 
 function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
