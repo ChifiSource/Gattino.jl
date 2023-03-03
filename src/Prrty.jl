@@ -52,5 +52,11 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
     con
 end
 
+hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
+margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x)) = begin
+
+end
+
+export line, hist, scatter
 include("Dashboards.jl")
 end # module
