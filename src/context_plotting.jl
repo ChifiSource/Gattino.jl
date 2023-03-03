@@ -57,6 +57,38 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
+function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
+                      n::Int64 = 4, styles::Pair{String, <:Any}...)
+
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 10pt)
+    end
+
+    unique_strings = unique(x)
+    string_map = Dict(unique_strings[i] => i for i in 1:length(unique_strings))
+    numeric_x = [string_map[s] for s in x]
+
+    mx = con.margin[1]
+    my = con.margin[2]
+    division_amountx::Int64 = round((con.dim[1]) / n)
+    division_amounty::Int64 = round((con.dim[2]) / n)
+    x_offset = division_amountx / 2
+    y_offset = division_amounty / 2
+    cx = 1
+    cy = maximum(y)
+    xstep = round(maximum(numeric_x) / n)
+    ystep = round(maximum(y) / n)
+
+    [begin
+        text!(con, xcoord + mx, con.dim[2] - 10 + my, unique_strings[cx], styles ...)
+        text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
+        cx += xstep
+        cy -= ystep
+    end for (xcoord, ycoord) in zip(
+            range(1, con.dim[1], step = division_amountx),
+            range(1, con.dim[2], step = division_amounty))]
+end
+
 function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
         styles::Pair{String, <:Any} ...)
     if length(styles) == 0
