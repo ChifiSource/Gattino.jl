@@ -65,24 +65,23 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     end
 
     unique_strings = unique(x)
-    string_map = Dict(unique_strings[i] => i for i in 1:length(unique_strings))
-    numeric_x = [string_map[s] for s in x]
-
     mx = con.margin[1]
     my = con.margin[2]
     division_amountx::Int64 = round((con.dim[1]) / n)
     division_amounty::Int64 = round((con.dim[2]) / n)
     x_offset = division_amountx / 2
     y_offset = division_amounty / 2
-    cx = 0
+    cx = 1
     cy = maximum(y)
-    xstep = round(maximum(numeric_x) / n)
+    xstep = 1
     ystep = round(maximum(y) / n)
 
     [begin
-        cx += 1
-        text!(con, xcoord + mx, con.dim[2] - 10 + my, unique_strings[round(cx)], styles ...)
+        if cx <= length(unique_strings)
+            text!(con, xcoord + mx, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
+        end
         text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
+        cx += xstep
         cy -= ystep
     end for (xcoord, ycoord) in zip(
             range(1, con.dim[1], step = division_amountx),
