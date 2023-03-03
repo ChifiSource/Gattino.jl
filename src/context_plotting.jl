@@ -30,9 +30,31 @@ function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
     line!(con, [string(d) for d in x], y, styles ...)
 end
 
-function gridlabels!(con::AbstractContext, x::Vector{<:Number},
-    y::Vector{<:Number}, n::Int64 = 44, styles::Piar{String, <:Any} ...)
+function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+                      n::Int64 = 4, styles::Pair{String, <:Any}...)
 
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 10pt)
+    end
+
+    mx = con.margin[1]
+    my = con.margin[2]
+    division_amountx::Int64 = round((con.dim[1]) / n)
+    division_amounty::Int64 = round((con.dim[2]) / n)
+    x_offset = division_amountx / 2
+    y_offset = division_amounty / 2
+    cx = 0
+    cy = maximum(y)
+    xstep = round(maximum(x) / n)
+    ystep = round(maximum(y) / n)
+        [begin
+        text!(con, xcoord + mx, con.dim[2] - 10 + my, string(cx), styles ...)
+        text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
+        cx += xstep
+        cy -= ystep
+        end for (xcoord, ycoord) in zip(
+    range(1, con.dim[1],
+    step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
 function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
@@ -70,22 +92,6 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
     end for (xcoord, ycoord) in zip(
     range(1, con.dim[1],
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
-end
-
-function labled_grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "lightblue", "stroke-width" => "1", "opacity" => 80percent)
-    end
-    mx = con.margin[1]
-    my = con.margin[2]
-    division_amountx::Int64 = round((con.dim[1]) / n)
-    division_amounty::Int64 = round((con.dim[2]) / n)
-    (begin
-        line!(con, xcoord + mx => 0 + my, xcoord + mx => con.dim[2] + mx, styles ...)
-        line!(con, 0 + mx => ycoord + my, con.dim[1] + mx => ycoord + my, styles ...)
-    end for (xcoord, ycoord) in zip(
-    range(1, con.dim[1],
-    step = division_amountx), range(1, con.dim[2], step = division_amounty)))
 end
 
 function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
