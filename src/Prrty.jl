@@ -53,8 +53,17 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
 end
 
 hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
-margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x)) = begin
-
+    margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x)) = begin
+    con::Context = Context(width, height, margin)
+    group!(con, "plotbase") do g::Group
+        axes!(g)
+        grid!(g, divisions)
+        gridlabels!(g, x, y)
+    end
+    group!(con, "bars") do g::Group
+        bars!(con, x, y)
+    end
+    con
 end
 
 export line, hist, scatter
