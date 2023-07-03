@@ -155,6 +155,32 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
      con.margin[1] => con.dim[2] + con.margin[2], styles ...)
 end
 
+function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    n_features::Int64 = length(x)
+    ymax::Number = maximum(y)
+    percvec_y = map(n::Number -> n / ymax, y)
+    block_width = round(Int64(con.dim[1] / n_features))
+    rects = Vector{Servable}([begin
+        scaled_y::Number = con.dim[2] * percvec_y[e]
+        rct = ToolipsSVG.rect(randstring(), x = Int64(round(xpos)),  y = con.dim[2] - Int64(round(scaled_y)), 
+            width = block_width, height = Int64(round(con.dim[2])))
+        style!(rct, styles ...)
+        rct
+    end for (e, xpos) in enumerate(range(1, con.dim[1] + con.margin[1], step = block_width))])
+    draw!(con, rects)
+end
+
+bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...) = begin
+    bars!(con, [string(v) for v in x], y, styles ...)
+end
+
+function rectlabels(con::AbstractContext, x::Vector{String}, styles::Pair{String, <:Any} ...)
+
+end
+
 function trendline!(context::Context, styles::Pair{String, String} ...)
 
 end
