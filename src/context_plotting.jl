@@ -161,15 +161,17 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     end
     n_features::Int64 = length(x)
     ymax::Number = maximum(y)
+    n = 0
     percvec_y = map(n::Number -> n / ymax, y)
-    block_width = round(Int64(con.dim[1] / n_features))
+    block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = con.dim[2] * percvec_y[e]
-        rct = ToolipsSVG.rect(randstring(), x = Int64(round(xpos)),  y = con.dim[2] - Int64(round(scaled_y)), 
-            width = block_width, height = Int64(round(con.dim[2])))
+        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)),  y = con.dim[2] - Int64(round(scaled_y)), 
+        width = block_width, height = Int64(round(con.dim[2])))
         style!(rct, styles ...)
+        n += block_width
         rct
-    end for (e, xpos) in enumerate(range(1, con.dim[1] + con.margin[1], step = block_width))])
+    end for e in 1:n_features])
     draw!(con, rects)
 end
 
