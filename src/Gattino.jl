@@ -2,9 +2,9 @@ module Gattino
 using Toolips
 using ToolipsDefaults
 using ToolipsSVG
-using Contexts
-using Contexts.Random: randstring
-import Contexts: line!
+using VectorContexts
+using VectorContexts.Random: randstring
+import VectorContexts: line!
 include("context_plotting.jl")
 
 scatter(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
