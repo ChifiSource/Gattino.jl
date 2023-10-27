@@ -6,7 +6,6 @@ different elements inside of the Context.
 ##### Consistencies
 - window::Component{<Any}
 - uuid::String
-- layers::Dict{String, UnitRange{Int64}}
 - dim::Pair{Int64, Int64}
 - margin::Pair{Int64, Int64}
 """
@@ -14,17 +13,13 @@ abstract type AbstractContext <: Toolips.Modifier end
 
 """
 ### Context <: AbstractContext
-- windoww::Component{:svg}
+- window::Component{:svg}
 - uuid::String
-- layers::Dict{String,  UnitRange{Int64}}
 - dim::Int64{Int64, Int64}
 - margin::Pair{Int64, Int64}
 
 The `Context` can be used with the `draw!` method in order to create and
-draw SVG layers -- as well as store them and mutate them. When indexed with
-a `String`, this will yield the layer of that name. When indexed with a
-`UnitRange{Int64}`, it will yield the layers in that range. See the
-`context` method for more information on easy ways to create these.
+draw SVG layers in with scaling functions.
 ##### example
 ```
 using Contexts
@@ -41,11 +36,10 @@ display(con)
 mutable struct Context <: AbstractContext
     window::Component{:svg}
     uuid::String
-    layers::Dict{String, UnitRange{Int64}}
     dim::Pair{Int64, Int64}
     margin::Pair{Int64, Int64}
     Context(wind::Component{:svg}, margin::Pair{Int64, Int64}) = begin
-        new(wind, randstring(), Dict{String, UnitRange{Int64}}(), wind[:width] => wind[:height],
+        new(wind, randstring(), wind[:width] => wind[:height],
             margin)::Context
     end
     Context(width::Int64 = 1280, height::Int64 = 720,
@@ -59,45 +53,21 @@ end
 write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c,
 con.window)
 
-"""
-**Contexts**
-### show(io::IO, con::AbstractContext) -> _
-------------------
-Shows the context's window (as HTML).
-#### example
-```
-
-```
-"""
 function show(io::IO, con::AbstractContext)
     display(MIME"text/html"(), con.window)
 end
 
-"""
-**Contexts**
-### show(io::Base.TTY, con::AbstractContext) -> _
-------------------
-Shows the context as text.
-#### example
-```
 
-```
-"""
 function show(io::Base.TTY, con::AbstractContext)
     println("Context ($(con.dim[1]) x $(con.dim[2]))")
 end
 
-getindex(con::Context, r::UnitRange{Int64}) = begin
-    con.layers[findall(x -> x[2] == r, con)]
-end
-
-getindex(con::Context, str::String) = con.window[:children][str]
+getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
 function draw!(c::AbstractContext, comps::Vector{<:Servable}, id::String = randstring())
     current_len::Int64 = length(c.window[:children])
     comp_len::Int64 = length(comps)
     c.window[:children] = Vector{Servable}(vcat(c.window[:children], comps))
-    push!(c.layers, id => current_len + 1:current_len + comp_len)
     nothing
 end
 
@@ -106,16 +76,20 @@ function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ..
     nothing
 end
 
+function style!(con::AbstractContext, spairs::Pair{String, String} ...)
+    style!(con.window, spairs ...)
+    nothing
+end
+
 mutable struct Group <: AbstractContext
     window::Component{:g}
     uuid::String
-    layers::Dict{String, UnitRange{Int64}}
     dim::Pair{Int64, Int64}
     margin::Pair{Int64, Int64}
     Group(name::String = randstring(), width::Int64 = 1280, height::Int64 = 720,
         margin::Pair{Int64, Int64} = 0 => 0) = begin
         window::Component{:g} = ToolipsSVG.g("$name", width = width, height = height)
-        new(window, name, Dict{String, UnitRange{Int64}}(), width => height, margin)
+        new(window, name, width => height, margin)
     end
 end
 
@@ -139,7 +113,7 @@ end
 
 function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
-        styles = ("fill" => "black", "font-size" => 10pt)
+        styles = ("fill" => "black", "font-size" => 13pt)
     end
     t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
     style!(t, styles ...)
@@ -213,8 +187,8 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     my = con.margin[2]
     division_amountx::Int64 = round((con.dim[1]) / n)
     division_amounty::Int64 = round((con.dim[2]) / n)
-    x_offset = division_amountx / 2
-    y_offset = division_amounty / 2
+    x_offset = Int64(round(division_amountx / 2))
+    y_offset = Int64(round(division_amounty / 2))
     cx = 1
     xstep = 1
     ystep = round(maximum(y) / n)
@@ -222,9 +196,9 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
 
     [begin
         if cx <= length(unique_strings)
-            text!(con, xcoord + mx, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
+            text!(con, xcoord + mx - x_offset, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
         end
-        text!(con, 0 + mx, ycoord + my, string(cy), styles ...)
+        text!(con, 0 + mx, ycoord + my - y_offset, string(cy), styles ...)
         cx += xstep
         cy -= ystep
     end for (xcoord, ycoord) in zip(
@@ -311,8 +285,8 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
-        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)),  y = con.dim[2] - scaled_y, 
-        width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y))
+        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)) + con.margin[1],  y = con.dim[2] - scaled_y + con.margin[2], 
+        width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y) + con.margin[1])
         style!(rct, styles ...)
         n += block_width
         rct
