@@ -14,10 +14,12 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
     group!(con, "plotbase") do g::Group
         axes!(g)
         grid!(g, divisions)
-        gridlabels!(g, x, y, divisions)
     end
     group!(con, "points") do g::Group
         points!(g, x, y)
+    end
+    group!(con, "labels") do g::Group
+        gridlabels!(g, x, y, divisions)
     end
     con
 end
@@ -29,10 +31,13 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
     group!(con, "plotbase") do g::Group
         axes!(g)
         grid!(g, divisions)
-        gridlabels!(g, x, y, divisions)
+        
     end
     group!(con, "line") do g::Group
         line!(g, x, y)
+    end
+    group!(con, "labels") do g::Group
+        gridlabels!(g, x, y, divisions)
     end
     con
 end
@@ -44,10 +49,12 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
     group!(con, "plotbase") do g::Group
         axes!(g)
         grid!(g, divisions)
-        gridlabels!(g, x, y, divisions)
     end
     group!(con, "line") do g::Group
         line!(g, x, y)
+    end
+    group!(con, "labels") do g::Group
+        gridlabels!(g, x, y, divisions)
     end
     con
 end
@@ -58,10 +65,12 @@ hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 
     group!(con, "plotbase") do g::Group
         axes!(g)
         grid!(g, divisions)
-        gridlabels!(g, x, y)
     end
     group!(con, "bars") do g::Group
-        bars!(con, x, y)
+        bars!(g, x, y)
+    end
+    group!(con, "labels") do g::Group
+        gridlabels!(g, x, y, divisions)
     end
     con
 end
