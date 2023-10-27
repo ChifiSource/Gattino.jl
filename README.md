@@ -1,12 +1,23 @@
-<div align="center"><img src="https://github.com/ChifiSource/Prrty.jl/blob/main/assets/prrt500.png" width = 250 />
-<h6>elegant plots and dashboards</h6>
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/gattino.png" width = 250 />
+  <h4>gattino</h4>
 </div>
 <div align="left">
 
-`Prrty.jl` provides an extensible and modular statistical plotting system for Julia. Prrty uses a simple [Toolips](http://github.com/ChifiSource/Toolips.jl) backend to create versatile and diverse visualizations using toolips methodologies.
-##### what is this??
-Listen, I know I am working on a lot of stuff -- feel free to contribute if you find the concepts intriging. Easiest commits would be to an unreleased package, like [ToolipsSVG](https://github.com/ChifiSource/ToolipsSVG.jl) -- which is a going to be a required released dependency for [Contexts](https://github.com/ChifiSource/ToolipsSVG.jl) for this project. [Olive](https://github.com/ChifiSource/Olive.jl) would be a cool thing too :). I have `indeed` resorted to begging for help in READMEs because I love the idea of open-source collaboration... I think you might enjoy the result. But this seems to be a relatively great platform to build on, I just need to figure out all the nuances and scaling can be annoying -- overall it's pretty simple though this package has not quite been coded yet. More of an abstract package in the process of working itself into being pretty powerful. This is `Contexts`. `Prrty` is meant to provide a statistical plotting interface that is extensible. The biggest reason why `Contexts` is a separate module (**it was** originally part of this module). `Contexts` is an essential package to this story, so allow me to explain... The way that Prrty is going to work is by putting a bunch of `Toolips` Components together in a `Vector{Servable}`, then scaling and drawing with the `draw!` method. This method also preserves layers, which I will of course have to write `getindex` things for -- this will be in `Contexts` -- as is `draw!`. There are even some adjustments that will be made to that code, but don't worry this will all come in time. For now this is my sanity side project because I really like working with plots and scaling -- and visuals.
+**Gattino.jl** is a new extensible plotting library built atop the SVG templating capabilities of the [Toolips.jl](http://github.com/ChifiSource/Toolips.jl) web-framework. Gattino features toolips-like extensibility, functional programming, and introspectable plotting. This module is in its infancy, but is still able to be used for some things. The high level methods are currently...
+```julia
+scatter(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
+height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
+    title::String = "", args ...)
 
-This leads to a pretty great, relocatable backend for SVG -- where it is easy to draw things in frames, and then transform them, there comes a lot of potential for some really cool web-development. Even in the realm of some pretty complex SVG editors. For now, though, this is not my plan. `Prrty` takes the ideas from `Toolips`, combines them with the `Contexts` back-end. This means I could very effectively make a layer editor for plots -- allowing the removal and addition of layers at a whim. Completely open-box -- and then it will be easy to tie in dashboards because ... **We have toolips**. The hardest part of all of this is interactivity. Eventually i'd also like to add in 3D contexts maybe... And expand this to fit the same thing. So you will be able to see the layers and adjust them -- biggest problem right now is just that I need to adjust the naming schemes... Each name must be unique.
+line(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
+height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
+    title::String = "", args ...)
 
-I AM working on this though, and you might actually be able to expect a release soon... I am enjoying this project a lot. Love you all, thanks for reading my ramblings -- this is available for a limited time only.
+line(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500,
+height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
+    divisions::Int64 = length(x), title::String = "", args ...)
+
+hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
+    margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x))
+```
+We will be adding more as well as extensions as time goes on, we are still working on a lot of other projects, so this one might be some magnitutude of time.
