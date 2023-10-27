@@ -83,5 +83,5 @@ hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 
     con
 end
 
-export line, hist, scatter
+export line, hist, scatter, Group, group!, Context, style!
 end # module

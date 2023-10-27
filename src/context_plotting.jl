@@ -310,9 +310,9 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     percvec_y = map(n::Number -> n / ymax, y)
     block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
-        scaled_y::Number = con.dim[2] * percvec_y[e]
-        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)),  y = con.dim[2] - Int64(round(scaled_y)), 
-        width = block_width, height = Int64(round(con.dim[2])))
+        scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
+        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)),  y = con.dim[2] - scaled_y, 
+        width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y))
         style!(rct, styles ...)
         n += block_width
         rct
@@ -322,12 +322,4 @@ end
 
 bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...) = begin
     bars!(con, [string(v) for v in x], y, styles ...)
-end
-
-function rectlabels(con::AbstractContext, x::Vector{String}, styles::Pair{String, <:Any} ...)
-
-end
-
-function trendline!(context::Context, styles::Pair{String, String} ...)
-
 end
