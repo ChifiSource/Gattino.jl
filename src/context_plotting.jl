@@ -53,6 +53,19 @@ end
 write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c,
 con.window)
 
+function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
+    con = Context(width. height, margin)
+    f(con)
+    con::Context
+end
+
+function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
+    con = Context(con.windowwidth. height, margin)
+    f(con)
+    con::Context
+end
+
+
 function show(io::IO, con::AbstractContext)
     display(MIME"text/html"(), con.window)
 end
@@ -64,7 +77,9 @@ end
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
-function draw!(c::AbstractContext, comps::Vector{<:Servable}, id::String = randstring())
+layers(con::AbstractContext) = [e => comp.name for (e, com) in enumerate(con.window[:children])]
+
+function draw!(c::AbstractContext, comps::Vector{<:Servable})
     current_len::Int64 = length(c.window[:children])
     comp_len::Int64 = length(comps)
     c.window[:children] = Vector{Servable}(vcat(c.window[:children], comps))
@@ -93,11 +108,18 @@ mutable struct Group <: AbstractContext
     end
 end
 
-function group!(f::Function, c::Context, name::String, w::Int64 = c.dim[1],
+function group(f::Function, c::Context, w::Int64 = c.dim[1],
+    h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin)
+    gr = Group("n", w, h, margin)
+    f(gr)
+    draw!(c, [child for child in gr.window[:children]])
+end
+
+function group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[1],
     h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin)
     gr = Group(name, w, h, margin)
     f(gr)
-    draw!(c, [gr.window], name)
+    draw!(c, [gr.window])
 end
 
 function line!(con::AbstractContext, first::Pair{<:Number, <:Number},

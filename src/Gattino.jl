@@ -11,20 +11,21 @@ include("context_plotting.jl")
 scatter(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
 height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
     title::String = "", args ...) = begin
-    con::Context = Context(width, height, margin)
-    group!(con, "axes") do g::Group
-        axes!(g)
+    cont::Context = context(width, height, margin) do con::Context
+        group!(con, "axes") do g::Group
+            axes!(g)
+        end
+        group!(con, "grid") do g::Group
+            grid!(g, divisions)
+        end
+        group!(con, "points") do g::Group
+            points!(g, x, y)
+        end
+        group!(con, "labels") do g::Group
+            gridlabels!(g, x, y, divisions)
+        end
     end
-    group!(con, "grid") do g::Group
-        grid!(g, divisions)
-    end
-    group!(con, "points") do g::Group
-        points!(g, x, y)
-    end
-    group!(con, "labels") do g::Group
-        gridlabels!(g, x, y, divisions)
-    end
-    con
+    con::Context
 end
 
 line(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
@@ -48,21 +49,42 @@ end
 
 line(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500,
 height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
-    divisions::Int64 = length(x), title::String = "", args ...) = begin
+    divisions::Int64 = length(x), title::String = "") = begin
+    if length(x) != length(y)
+        throw(
+            DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
+        )
+    end
     con::Context = Context(width, height, margin)
-    group!(con, "axes") do g::Group
-        axes!(g)
+    w::Int64, h::Int64 = width, height
+    ml::Int64, mt::Int64 = margin[1], margin[2]
+    if title != ""
+        group!(con, "title") do titlegroup::Group
+            posx = Int64(round(con.dim[1] * .35))
+            posy = Int64(round(con.dim[2] * .08))
+            text!(con, posx, posy, title, "fill" => "black", "font-size" => 15pt)
+        end
+        w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
+        ml, mt = Int64(round(con.dim[1] * .12)), Int64(round(con.dim[2] * .12))
     end
-    group!(con, "grid") do g::Group
-        grid!(g, divisions)
+    group(con, w, h, ml => mt) do plotgroup::Group
+        group!(plotgroup, "axes") do g::Group
+            axes!(g)
+        end
+        group!(plotgroup, "grid") do g::Group
+            grid!(g, divisions)
+        end
+        group!(plotgroup, "line") do g::Group
+            line!(g, x, y)
+        end
+        group!(plotgroup, "labels") do g::Group
+            gridlabels!(g, x, y, divisions)
+        end
+        group!(con, "axislabels") do axesgroup::Group
+
+        end
     end
-    group!(con, "line") do g::Group
-        line!(g, x, y)
-    end
-    group!(con, "labels") do g::Group
-        gridlabels!(g, x, y, divisions)
-    end
-    con
+    con::Context
 end
 
 hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
@@ -83,5 +105,5 @@ hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 
     con
 end
 
-export line, hist, scatter, Group, group!, Context, style!
+export line, hist, scatter, Group, group!, Context, style!, px_str, pt_str
 end # module
