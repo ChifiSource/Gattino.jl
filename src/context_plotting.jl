@@ -53,10 +53,14 @@ end
 write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c,
 con.window)
 
-function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
-    con = Context(width. height, margin)
+function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
+    con = Context(width, height, margin)
     f(con)
     con::Context
+end
+
+function merge!(c::AbstractContext, c2::AbstractContext)
+    c.window[:children] = vcat(c.window[:children], c2.window[:children])
 end
 
 function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
@@ -82,7 +86,7 @@ end
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
-layers(con::AbstractContext) = [e => comp.name for (e, com) in enumerate(con.window[:children])]
+layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
 
 function draw!(c::AbstractContext, comps::Vector{<:Servable})
     current_len::Int64 = length(c.window[:children])
@@ -204,11 +208,9 @@ end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
                       n::Int64 = 4, styles::Pair{String, <:Any}...)
-
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => 10pt)
     end
-
     unique_strings = unique(x)
     mx = con.margin[1]
     my = con.margin[2]
@@ -220,7 +222,6 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     xstep = 1
     ystep = round(maximum(y) / n)
     cy = maximum(y)
-
     [begin
         if cx <= length(unique_strings)
             text!(con, xcoord + mx - x_offset, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
@@ -283,12 +284,12 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     xmax::Number, ymax::Number = maximum(x), maximum(y)
      percvec_x = map(n::Number -> n / xmax, x)
      percvec_y = map(n::Number -> n / ymax, y)
-    [begin
+    draw!(con, Vector{Servable}([begin
         c = circle(randstring(), cx = string(pointx * con.dim[1] + con.margin[1]),
-                cy = string(con.dim[2] - (pointy * con.dim[2] + con.margin[2])), r = "5")
+                cy = string(con.dim[2] - (con.dim[2] * pointy) + con.margin[2]), r = "5")
             style!(c, styles ...)
-            draw!(con, [c])
-        end for (pointx, pointy) in zip(percvec_x, percvec_y)]
+            c
+        end for (pointx, pointy) in zip(percvec_x, percvec_y)]))
 end
 
 function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
