@@ -105,5 +105,5 @@ hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 
     con
 end
 
-export line, hist, scatter, Group, group!, Context, style!, px_str, pt_str
+export Group, group!, style!, px_str, pt_str, group, layers, context, move_layer
 end # module

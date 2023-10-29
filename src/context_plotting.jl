@@ -65,14 +65,19 @@ function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 
     con::Context
 end
 
+function move_layer!(con::Context, layer::String, to::Int64)
+    layerpos = findfirster(comp -> comp.name == layer, con.window[:children])
+    layercomp::AbstractComponent = con.window[:children][layer]
+    deleteat!(con.window[:children], layerpos)
+    insert!(con.window[:children], to, layercomp)
+end
 
 function show(io::IO, con::AbstractContext)
     display(MIME"text/html"(), con.window)
 end
 
-
 function show(io::Base.TTY, con::AbstractContext)
-    println("Context ($(con.dim[1]) x $(con.dim[2]))")
+    println(io, "Context ($(con.dim[1]) x $(con.dim[2]))")
 end
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
