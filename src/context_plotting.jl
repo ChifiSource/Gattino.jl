@@ -50,8 +50,7 @@ mutable struct Context <: AbstractContext
     end
 end
 
-write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c,
-con.window)
+write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c, con.window)
 
 function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
     con = Context(width, height, margin)
@@ -117,18 +116,18 @@ mutable struct Group <: AbstractContext
     end
 end
 
-function group(f::Function, c::Context, w::Int64 = c.dim[1],
+function group(f::Function, c::AbstractContext, w::Int64 = c.dim[1],
     h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin)
     gr = Group("n", w, h, margin)
     f(gr)
-    draw!(c, [child for child in gr.window[:children]])
+    draw!(c, Vector{Servable}([child for child in gr.window[:children]]))
 end
 
 function group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[1],
     h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin)
     gr = Group(name, w, h, margin)
     f(gr)
-    draw!(c, [gr.window])
+    draw!(c, Vector{Servable}([gr.window]))
 end
 
 function line!(con::AbstractContext, first::Pair{<:Number, <:Number},

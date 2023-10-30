@@ -8,17 +8,14 @@ using Random: randstring
 
 include("context_plotting.jl")
 
-scatter(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
-height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
-    title::String = "", args ...) = begin
+function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}; divisions::Int64 = 4, title::String = "")
       if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
         )
     end
-    con::Context = Context(width, height, margin)
-    w::Int64, h::Int64 = width, height
-    ml::Int64, mt::Int64 = margin[1], margin[2]
+    w::Int64, h::Int64 = con.dim[1], con.dim[2]
+    ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
             posx = Int64(round(con.dim[1] * .35))
@@ -41,24 +38,23 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-        group!(con, "axislabels") do g::Group
+        group!(plotgroup, "axislabels") do g::Group
 
         end
     end
-    con::Context
+    con::AbstractContext
 end
 
-line(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
-height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
-    title::String = "") = begin
+scatter(args ...; keyargs ...) = scatter_plot!(Context(500, 500), args ...; keyargs ...)
+
+function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}; divisions::Int64 = 4, title::String = "")
     if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
         )
     end
-    con::Context = Context(width, height, margin)
-    w::Int64, h::Int64 = width, height
-    ml::Int64, mt::Int64 = margin[1], margin[2]
+    w::Int64, h::Int64 = con.dim[1], con.dim[2]
+    ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
             posx = Int64(round(con.dim[1] * .35))
@@ -81,30 +77,21 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-        group!(con, "axislabels") do g::Group
+     #==   group!(plotgroup, "axislabels") do g::Group
 
-        end
+        end ==#
     end
-    con::Context
+    con::AbstractContext
 end
 
-function line(x::Vector{<:Number}, width::Int64 = 500,
-    height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
-        title::String = "")
-        line(x, [e for e in 1:length(x)], width, height, margin, divisions = divisions, title = title)::Context
-end
-
-line(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500,
-height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
-    divisions::Int64 = length(x), title::String = "") = begin
+function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divisions::Int64 = length(x), title::String = "")
     if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
         )
     end
-    con::Context = Context(width, height, margin)
-    w::Int64, h::Int64 = width, height
-    ml::Int64, mt::Int64 = margin[1], margin[2]
+    w::Int64, h::Int64 = con.dim[1], con.dim[2]
+    ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
             posx = Int64(round(con.dim[1] * .35))
@@ -127,23 +114,31 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-        group!(con, "axislabels") do axesgroup::Group
+#==        group!(plotgroup, "axislabels") do axesgroup::Group
 
-        end
+        end ==#
     end
-    con::Context
+    con::AbstractContext
 end
 
-hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
-    margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x), title::String = "") = begin
+function line_plot!(con::AbstractContext, x::Vector{<:Number}; keyargs ...)
+    line_plot!(con, x, [e for e in 1:length(x)], keyargs ...)::AbstractContext
+end
+
+function line(args ...; keyargs ...)
+    context(500, 500) do con::Context
+        line_plot!(con, args ...; keyargs ...)
+    end
+end
+
+function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divisions::Int64 = length(x), title::String = "")
     if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
         )
     end
-    con::Context = Context(width, height, margin)
-    w::Int64, h::Int64 = width, height
-    ml::Int64, mt::Int64 = margin[1], margin[2]
+    w::Int64, h::Int64 = con.dim[1], con.dim[2]
+    ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
             posx = Int64(round(con.dim[1] * .35))
@@ -166,12 +161,14 @@ hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-        group!(con, "axislabels") do g::Group
+        group!(plotgroup, "axislabels") do g::Group
 
         end
     end
-    con::Context
+    con::AbstractContext
 end
+
+hist(args ...; keyargs ...) = hist!(Context(500, 500), args ...; keyargs ...)
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer, seconds, percent, Context
 end # module
