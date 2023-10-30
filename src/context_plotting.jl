@@ -68,8 +68,18 @@ function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 
     con::Context
 end
 
-function move_layer!(con::Context, layer::String, to::Int64)
-    layerpos = findfirster(comp -> comp.name == layer, con.window[:children])
+function open_layer!(f::Function, con::AbstractContext, layer::String)
+    [f(comp) for comp in con[layer][:children]]
+    nothing
+end
+
+function delete_layer!(con::Context, layer::String)
+    layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
+    deleteat!(con.window[:children], layerpos)
+end
+
+function move_layer!(con::AbstractContext, layer::String, to::Int64)
+    layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
     layercomp::AbstractComponent = con.window[:children][layer]
     deleteat!(con.window[:children], layerpos)
     insert!(con.window[:children], to, layercomp)
@@ -311,7 +321,7 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
      con.margin[1] => con.dim[2] + con.margin[2], styles ...)
 end
 
-function axislabels!(con::AbstractConext, styles::Pair{String, <:Any} ...)
+function axislabels!(con::AbstractContext, styles::Pair{String, <:Any} ...)
 
 end
 
