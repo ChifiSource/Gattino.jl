@@ -21,6 +21,7 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
 - [visualizations](#visualizations)
   - [creating visualizations](#creating-visualizations)
   - [layouts](#layouts)
+  - [styling layers](#styling-layers)
   - [working with layers](#working-with-layers)
   - [annotations](#annotations)
   - [animation](#animation)
@@ -29,6 +30,7 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
   - [shapes](#plotting-shapes)
   - [other](#plotting-other-stuff)
 - [examples](#examples)
+  - [styled multichart](#styled-multichart)
 - [adding more](#adding-more)
 ## getting started
 ##### adding gattino
@@ -49,7 +51,7 @@ using Gattino
 
 Fortunately, we have a lot of plans for resources coming in the future and if this `README` is on the main branch it probably means that these plans are pretty well in motion; `Gattino` is meant to be coming at around the same time as these new resources.
 ## visualizations
-- [notebook]()
+- [notebook](https://github.com/ChifiSource/OliveNotebooks.jl/blob/main/gattino/doc/gattino_visualizations.jl)
 ##### creating visualizations
 While `Gattino` plots are completely composable and can be made by composing [context plotting](#context-plotting) elements together, the module also comes with some high-level functions which may be used to produce standard visualizations we are likely familiar with. These examples currently include `scatter`, `line`, and `hist`.
 ```julia
@@ -148,7 +150,7 @@ The other way we are able to do layouts is by creating a `Vector{<:AbstractConte
 ```julia
 TODO; This is still a planned feature.
 ```
-##### styling a layer
+##### styling layers
 The first thing we are going to want to do with our new `Gattino` visualization is probably style it, for this we use the following style dispatch:
 - `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
 
@@ -213,7 +215,7 @@ Finally, `merge!` will combine two different context's layers into the same cont
 
 ## examples
 #### styled multichart
-
+- [notebook](https://github.com/ChifiSource/OliveNotebooks.jl/blob/main/gattino/examples/styled_multichart.jl)
 <div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/styledmultichart.png"></img></div>
 
 
