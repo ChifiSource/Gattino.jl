@@ -22,6 +22,7 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
      - [high-level methods](#high-level-methods)
      - [editing visualizations](#editing-visualizations)
      - [annotating visualizations](#annotating-visualizations)
+     - [layouts](#layouts)
      - [animating visualizations](#animating-visualization)
      - [creating visualizations](#creating-visualizations)
      - [controlling visualizations](#controlling-visualizations)
@@ -34,7 +35,7 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
     - [other](#plotting-other-stuff)
 - [examples](#examples)
 - [adding more](#adding-more)
-### getting started
+## getting started
 ##### adding gattino
 Before `Gattino` is merged to the Julia `General` `Pkg` registry, `Gattino will need to be added by URL.
 ```julia
@@ -47,9 +48,44 @@ using Pkg; Pkg.add(url = "https://github.com/ChifiSource/Gattino.jl", rev = "Uns
 using Gattino
 ```
 ##### visualizations
+Graphics in `Gattino` are scaled using the `Context` and `Group` types. A `Context` represents a window, whereas a `Group` represents an area in that window. To create a context, we use the `context` method.
+- `context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)`
+```julia
+mycontext = context(500, 500) do con::Context
 
+end
+```
+This `Context` can now be used with [context plotting](#context-plotting) methods. There are two different types of `group` which we can use on our project,
+` `group!` is the mutating group -- this will add anything drawn to the group to the `Context`.
+- `group` is non-mutating group -- anything we draw will not be drawn onto the window.
+
+These two forms of group are used in tandem to organize the layers of our `Context`. `group` is used to define new `AbstractContext` dimensions without adding a layer, whereas `group!` will add a new layer in those dimensions. For example.
+```julia
+mycon = context(500, 500) do con::Context
+    group(con, 500, 250) do gridbox::Group
+        group!(gridbox, "grid") do g::Group
+            Gattino.grid!(g, 4)
+        end
+    end
+    group(con, 500, 250, 0 => 250) do otherbox::Group
+        group!(otherbox, "grid2") do g::Group
+            Gattino.grid!(g, 4, "stroke" => "pink")
+            
+        end
+    end
+    Gattino.text!(con, 230, 250, "hello!")
+end
+```
+```julia
+layers(mycon)
+
+3-element Vector{Pair{Int64, String}}:
+ 1 => "grid"
+ 2 => "grid2"
+ 3 => "la81WFbV"
+```
 ###### high-level methods
-When using Gattino, there is a pretty good chance you are going to be using the high-level methods which compose several `context_plotting` elements. Here are the high-level dispatches for creating a visualization:
+While `Gattino` plots are completely composable and can be made by composing [context plotting](#context-plotting) elements together, the module also comes with some high-level functions which may be used to produce standard visualizations we are likely familiar with.
 ```julia
 scatter(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
 height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
@@ -66,7 +102,7 @@ height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
 hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
     margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x))
 ```
-These methods are used to create a minimalistic visualization which can be further mutated with other `Gattino` methods. 
+These methods are used to create a minimalistic visualization which can be further mutated with other `Gattino` methods.
 ###### editing-visualizations
 Here are some common methods for this purpose:
 ```julia
@@ -79,6 +115,7 @@ layers(con::AbstractContext)
 In each of these examples, `con` of type **`AbstractContext`** would be our `Context` returned from any of those methods.
 Lastly, these high-level visualization methods simply compose a plot using the methods from `context_plotting.jl`. We can add new layers to our 
 ###### annotating visualizations
+###### layouts
 ###### animating visualizations
 ###### creating visualizations
 ###### controlling visualizations
