@@ -17,16 +17,15 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
 ##### map
 - [getting started](#getting-started)
    - [adding gattino](#adding-gattino)
-   - [Components](#components)
-   - [visualizations](#creating-visualizations)
-     - [high-level methods](#high-level-methods)
-     - [editing visualizations](#editing-visualizations)
-     - [annotating visualizations](#annotating-visualizations)
-     - [layouts](#layouts)
-     - [animating visualizations](#animating-visualization)
-     - [creating visualizations](#creating-visualizations)
-     - [controlling visualizations](#controlling-visualizations)
-   - [creating dashboards](#creating-dashboards)
+- [visualizations](#visualizations)
+  - [creating visualizations](#high-level-methods)
+  - [layouts](#layouts)
+  - [editing visualizations](#editing-visualizations)
+  - [annotating visualizations](#annotating-visualizations)
+  - [animating visualizations](#animating-visualization)
+  - [creating visualizations](#creating-visualizations)
+  - [controlling visualizations](#controlling-visualizations)
+- [creating dashboards](#creating-dashboards)
 - [Contexts](#contexts)
     - [Groups](#groups)
 - [context plotting](#context-plotting)
@@ -48,6 +47,28 @@ using Pkg; Pkg.add(url = "https://github.com/ChifiSource/Gattino.jl", rev = "Uns
 using Gattino
 ```
 ##### visualizations
+
+###### creating visualizations
+While `Gattino` plots are completely composable and can be made by composing [context plotting](#context-plotting) elements together, the module also comes with some high-level functions which may be used to produce standard visualizations we are likely familiar with. These examples currently include `scatter`, `line`, and `hist`.
+```julia
+scatter(x::Vector, y::Vector, divisions::Int64 = 4, title::String = "")
+
+line(x::Vector, y::Vector, divisions::Int64 = 4, title::String = "")
+
+hist(x::Vector, y::Vector, divisions::Int64 = 4, title::String = "")
+```
+These methods are used to create a minimalistic visualization which can be further mutated with other `Gattino` methods. In each of these examples,the return type will be an `AbstractContext`. Let's make our first histogram with `Gattino`.
+```julia
+myhist = hist(["emma", "emmy", "em"], [22, 25, 14], title = "votes for names")
+```
+The `hist` function is just a passthrough to `hist!`, which is a [context plotting](#context-plotting) function that creates a histogram. Notably, `hist` will create a new `Context` for us and `hist!` expects us to provide an `AbstractContext` as an argument. The `line` and `scatter` equivalence to this is found in `scatter_plot!` and `line_plot!`. That being said, if we want to add a visualization to a `Context` that already exists, we would use these methods, rather than the high-level method. When using `hist!` we will want to add our histogram to an old plot, when using `hist` we will be making a new plot with a new window. Here, I will use the `context` and `group!` functions to compose a scatter with the `scatter_plot!` method.
+```julia
+myframe = context(500, 500) do con::Context
+    group!(con, "scatter", 250, 250) do g::Group
+        Gattino.scatter_plot!(g, [1, 2, 3, 4], [1, 2, 3, 4])
+    end
+end
+```
 Graphics in `Gattino` are scaled using the `Context` and `Group` types. A `Context` represents a window, whereas a `Group` represents an area in that window. To create a context, we use the `context` method.
 - `context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)`
 ```julia
@@ -84,25 +105,8 @@ layers(mycon)
  2 => "grid2"
  3 => "la81WFbV"
 ```
-###### high-level methods
-While `Gattino` plots are completely composable and can be made by composing [context plotting](#context-plotting) elements together, the module also comes with some high-level functions which may be used to produce standard visualizations we are likely familiar with.
-```julia
-scatter(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
-height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
-    title::String = "", args ...)
+###### layouts
 
-line(x::Vector{<:Number}, y::Vector{<:Number}, width::Int64 = 500,
-height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = 4,
-    title::String = "", args ...)
-
-line(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500,
-height::Int64 = 500, margin::Pair{Int64, Int64} = 0 => 0;
-    divisions::Int64 = length(x), title::String = "", args ...)
-
-hist(x::Vector{<:Any}, y::Vector{<:Number}, width::Int64 = 500, height::Int64 = 500,
-    margin::Pair{Int64, Int64} = 0 => 0; divisions::Int64 = length(x))
-```
-These methods are used to create a minimalistic visualization which can be further mutated with other `Gattino` methods.
 ###### editing-visualizations
 Here are some common methods for this purpose:
 ```julia
@@ -112,8 +116,6 @@ getindex(con::AbstractContext, str::String)
 
 layers(con::AbstractContext)
 ```
-In each of these examples, `con` of type **`AbstractContext`** would be our `Context` returned from any of those methods.
-Lastly, these high-level visualization methods simply compose a plot using the methods from `context_plotting.jl`. We can add new layers to our 
 ###### annotating visualizations
 ###### layouts
 ###### animating visualizations
