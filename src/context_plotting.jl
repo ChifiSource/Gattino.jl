@@ -221,8 +221,21 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
-function gridlabels!(con::AbstractContext, y::Vector{<:Number})
-
+function gridlabels!(con::AbstractContext, y::Vector{<:Number}, n::Int64 = 4, styles::Pair{String, String} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 10pt)
+    end
+    my = con.margin[2]
+    mx = con.margin[1]
+    division_amounty::Int64 = Int64(round((con.dim[2]) / n))
+    y_offset = Int64(round(division_amounty * .3))
+    ystep = Int64(round(maximum(y) / n))
+    permx = Int64(round(con.dim[1] * .05))
+    cy = maximum(y)
+        [begin
+        text!(con, permx + mx, ycoord + my + y_offset, string(cy), styles ...)
+        cy -= ystep
+        end for ycoord in range(1, con.dim[2], step = division_amounty)]
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
@@ -339,7 +352,7 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
         rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)) + con.margin[1],  y = con.dim[2] - scaled_y + con.margin[2], 
-        width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y) + con.margin[1])
+        width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y))
         style!(rct, styles ...)
         n += block_width
         rct
@@ -353,7 +366,7 @@ end
 
 function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
     if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+        styles = ("fill" => "black", "font-size" => 11pt)
     end
     n_features::Int64 = length(x)
     block_width = Int64(round(con.dim[1] / n_features))
