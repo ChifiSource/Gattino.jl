@@ -213,6 +213,10 @@ Finally, `merge!` will combine two different context's layers into the same cont
 
 ## examples
 #### styled multichart
-```
-TODO styled multichart here
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/styledmultichart.png"></img></div>
+
+
+```julia
+
 ```
