@@ -49,6 +49,7 @@ using Gattino
 
 Fortunately, we have a lot of plans for resources coming in the future and if this `README` is on the main branch it probably means that these plans are pretty well in motion; `Gattino` is meant to be coming at around the same time as these new resources.
 ## visualizations
+- [notebook]()
 ##### creating visualizations
 While `Gattino` plots are completely composable and can be made by composing [context plotting](#context-plotting) elements together, the module also comes with some high-level functions which may be used to produce standard visualizations we are likely familiar with. These examples currently include `scatter`, `line`, and `hist`.
 ```julia
@@ -62,6 +63,9 @@ These methods are used to create a minimalistic visualization which can be furth
 ```julia
 myhist = hist(["emma", "emmy", "em"], [22, 25, 14], title = "votes for names")
 ```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/firsthist.png"></img></div>
+
 The `hist` function is just a passthrough to `hist!`, which is a [context plotting](#context-plotting) function that creates a histogram. Notably, `hist` will create a new `Context` for us and `hist!` expects us to provide an `AbstractContext` as an argument. The `line` and `scatter` equivalence to this is found in `scatter_plot!` and `line_plot!`. That being said, if we want to add a visualization to a `Context` that already exists, we would use these methods, rather than the high-level method. When using `hist!` we will want to add our histogram to an old plot, when using `hist` we will be making a new plot with a new window. Here, I will use the `context` and `group!` functions to compose a scatter with the `scatter_plot!` method.
 ```julia
 myframe = context(500, 500) do con::Context
@@ -70,6 +74,9 @@ myframe = context(500, 500) do con::Context
     end
 end
 ```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/secondplot.png"></img></div>
+
 Graphics in `Gattino` are scaled using the `Context` and `Group` types. A `Context` represents a window, whereas a `Group` represents an area in that window. To create a context, we use the `context` method.
 - `context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)`
 ```julia
@@ -104,9 +111,9 @@ mycon = context(500, 500) do con::Context
     Gattino.text!(con, 230, 250, "hello!")
 end
 ```
-```
-TODO IMAGE HERE
-```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/griddemonstration.png"></img></div>
+
 In this case, I used `group` to create an initial `AbstractContext` with a certain dimensionality so that we could draw a bunch of things onto it. Note the use of `group` in this case, as I do not want this group to be drawn as a layer it is only used to change the dimensions. Next, I used `group!` whenever I actually wanted to draw onto the grid. The advantage to using `group!` like this is that we get all of the elements on different layers. We can access these layers with the `layers` function.
 ```julia
 layers(mycon)
@@ -125,14 +132,46 @@ myframe = context(500, 250) do con::Context
     end
 end
 ```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/layoutsdemonstration.png"></img></div>
+
 In this case, we have a `Context`, or window, of width **500** and height **250**. The group we created below this is of width **250** and of height **250** -- the full height and half of the width. Let's add a grid with a `margin` of **250** on the X with the same size. This will make it easier to discern the difference between these visualizations.
 ```julia
-
+group(myframe, 250, 250, 250 => 0) do g::Group
+    Gattino.grid!(g, 4, "stroke" => "pink")
+end
 ```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/layoutsdemonstration2.png"></img></div>
+
 The other way we are able to do layouts is by creating a `Vector{<:AbstractContext}`. This `Vector` will display as the totality of itself, concatenated with the shape. In other words a `Vector{Context}` with two `Contexts` of width **200** will display at width **400**.
 ```julia
-This is still a planned feature.
+TODO; This is still a planned feature.
 ```
+##### styling a layer
+The first thing we are going to want to do with our new `Gattino` visualization is probably style it, for this we use the following style dispatch:
+- `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
+
+In order to use this dispatch, we will need to provide a layer name as the second argument. In order to check the layers currently in your `Context`, use `layers(::AbstractContext)`. Let's try this on [the histogram we created](#creating-visualizations).
+```julia
+layers(myhist)
+7-element Vector{Pair{Int64, String}}:
+1 => "XS3ms8yi"
+2 => "title"
+3 => "axes"
+4 => "grid"
+5 => "bars"
+6 => "labels"
+7 => "axislabels"
+```
+We are able to style these all individually with the `style!` dispatch we created earlier. These `style!` calls are simply CSS pairs from Toolips. Let's change the `fill` of our bars and make some other adjustmnets to the labels.
+```julia
+style!(myhist, "bars", "fill" => "orange", "opacity" => 70percent)
+style!(myhist, "labels", "stroke-width" => 0px, "fill" => "white", "font-weight" => "bold")
+```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/histstyled.png"></img></div>
+
 ##### working with layers
 An important aspect to `Gattino` is the layering aspect. In `Gattino`, visualizations are premade from the [context plotting](#context-plotting) toolkit and then mutated by making changes to the layers. We are able to access the layers of an `AbstractContext` using the `layers` method.
 ```julia
