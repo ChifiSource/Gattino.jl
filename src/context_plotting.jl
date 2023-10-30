@@ -98,7 +98,13 @@ function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ..
     [style!(c, spairs ...) for c in con.window[:children][s][:children]]
     nothing
 end
+#==TODO
+I need some sort of function that will be able to style elements based on their 
+    color, radius, whatever.
+function style!(con::AbstractContext, s::String, x::Vector{String})
 
+end
+==#
 function style!(con::AbstractContext, spairs::Pair{String, String} ...)
     style!(con.window, spairs ...)
     nothing
@@ -189,8 +195,8 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     my = con.margin[2]
     division_amountx::Int64 = round((con.dim[1]) / n)
     division_amounty::Int64 = round((con.dim[2]) / n)
-    x_offset = division_amountx / 2
-    y_offset = division_amounty / 2
+    x_offset = division_amountx * .30
+    y_offset = division_amounty * .30
     cx = 0
     xstep = round(maximum(x) / n)
     ystep = round(maximum(y) / n)
@@ -205,6 +211,10 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
+function gridlabels!(con::AbstractContext, y::Vector{<:Number})
+
+end
+
 function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
                       n::Int64 = 4, styles::Pair{String, <:Any}...)
     if length(styles) == 0
@@ -215,8 +225,8 @@ function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vecto
     my = con.margin[2]
     division_amountx::Int64 = round((con.dim[1]) / n)
     division_amounty::Int64 = round((con.dim[2]) / n)
-    x_offset = Int64(round(division_amountx / 2))
-    y_offset = Int64(round(division_amounty / 2))
+    x_offset = Int64(round(division_amountx * .75))
+    y_offset = Int64(round(division_amounty * .10))
     cx = 1
     xstep = 1
     ystep = round(maximum(y) / n)
@@ -301,6 +311,12 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
      con.margin[1] => con.dim[2] + con.margin[2], styles ...)
 end
 
+function axislabels!(con::AbstractConext, styles::Pair{String, <:Any} ...)
+
+end
+
+
+
 function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
@@ -323,4 +339,30 @@ end
 
 bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...) = begin
     bars!(con, [string(v) for v in x], y, styles ...)
+end
+
+function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    n_features::Int64 = length(x)
+    block_width = Int64(round(con.dim[1] / n_features))
+    offset::Int64 = Int64(round(block_width * .15))
+    perm_y = Int64(round(con.dim[2] - con.dim[2] * .20))
+    [begin
+        text!(con, xval + con.margin[1] + offset, perm_y, x[e], styles ...)
+    end for (e, xval) in enumerate(range(1, n_features * block_width, step = block_width))]
+    return
+end
+
+function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
+
+end
+
+function v_barlabels!(con::AbstractContext, x::Vector{AbstractString})
+
+end
+
+function legend!(con::AbstractContext, x::Vector{Pair{String, Component{<:Any}}})
+
 end

@@ -159,7 +159,7 @@ function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divi
             bars!(g, x, y)
         end
         group!(plotgroup, "labels") do g::Group
-            gridlabels!(g, x, y, divisions)
+            barlabels!(g, x)
         end
         group!(plotgroup, "axislabels") do g::Group
 
