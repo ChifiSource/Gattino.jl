@@ -18,12 +18,12 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
-            posx = Int64(round(con.dim[1] * .35))
-            posy = Int64(round(con.dim[2] * .08))
+            posx = Int64(round(con.dim[1] * .35) + con.margin[1])
+            posy = Int64(round(con.dim[2] * .08) + con.margin[2])
             text!(con, posx, posy, title, "fill" => "black", "font-size" => 15pt)
         end
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
-        ml, mt = Int64(round(con.dim[1] * .12)), Int64(round(con.dim[2] * .12))
+        ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12) + con.margin[2])
     end
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group
@@ -57,12 +57,12 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
-            posx = Int64(round(con.dim[1] * .35))
-            posy = Int64(round(con.dim[2] * .08))
+            posx = Int64(round(con.dim[1] * .35) + con.margin[1])
+            posy = Int64(round(con.dim[2] * .08) + con.margin[2])
             text!(con, posx, posy, title, "fill" => "black", "font-size" => 15pt)
         end
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
-        ml, mt = Int64(round(con.dim[1] * .12)), Int64(round(con.dim[2] * .12))
+        ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
     end
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group
@@ -94,12 +94,12 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number};
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
-            posx = Int64(round(con.dim[1] * .35))
-            posy = Int64(round(con.dim[2] * .08))
+            posx = Int64(round(con.dim[1] * .35) + con.margin[1])
+            posy = Int64(round(con.dim[2] * .08) + con.margin[2])
             text!(con, posx, posy, title, "fill" => "black", "font-size" => 15pt)
         end
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
-        ml, mt = Int64(round(con.dim[1] * .12)), Int64(round(con.dim[2] * .12))
+        ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
     end
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group
@@ -141,12 +141,12 @@ function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divi
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
     if title != ""
         group!(con, "title") do titlegroup::Group
-            posx = Int64(round(con.dim[1] * .35))
-            posy = Int64(round(con.dim[2] * .08))
+            posx = Int64(round(con.dim[1] * .35) + con.margin[1])
+            posy = Int64(round(con.dim[2] * .08) + con.margin[2])
             text!(con, posx, posy, title, "fill" => "black", "font-size" => 15pt)
         end
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
-        ml, mt = Int64(round(con.dim[1] * .12)), Int64(round(con.dim[2] * .12))
+        ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
     end
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group

@@ -80,7 +80,7 @@ end
 
 function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
-    layercomp::AbstractComponent = con.window[:children][layer]
+    layercomp::Toolips.AbstractComponent = con.window[:children][layer]
     deleteat!(con.window[:children], layerpos)
     insert!(con.window[:children], to, layercomp)
 end
@@ -337,8 +337,6 @@ end
 function axislabels!(con::AbstractContext, styles::Pair{String, <:Any} ...)
 
 end
-
-
 
 function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
