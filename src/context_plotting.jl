@@ -69,13 +69,14 @@ function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 
 end
 
 function open_layer!(f::Function, con::AbstractContext, layer::String)
-    [f(comp) for comp in con[layer][:children]]
+    [f(e => comp) for (e, comp) in enumerate(con[layer][:children])]
     nothing
 end
 
 function delete_layer!(con::Context, layer::String)
     layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
     deleteat!(con.window[:children], layerpos)
+    layers(con)
 end
 
 function move_layer!(con::AbstractContext, layer::String, to::Int64)
@@ -83,6 +84,20 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layercomp::Toolips.AbstractComponent = con.window[:children][layer]
     deleteat!(con.window[:children], layerpos)
     insert!(con.window[:children], to, layercomp)
+    layers(con)
+end
+
+function set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
+    maxval::Number = maximum(vec)
+    ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
+end
+
+function style!(p::Pair{Int64, <:Toolips.AbstractComponent}, stylep::Pair{String, String} ...)
+    style!(p[2], styles ...)
+end
+
+function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["red", "darkred"])
+
 end
 
 function show(io::IO, con::AbstractContext)
