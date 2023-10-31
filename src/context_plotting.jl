@@ -92,11 +92,26 @@ function set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{
     ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
 end
 
-function style!(p::Pair{Int64, <:Toolips.AbstractComponent}, stylep::Pair{String, String} ...)
-    style!(p[2], styles ...)
+function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
+    maxval::Number = maximum(vec)
+    style!(ecomp[2], [p[1] => string(Int64(round(vec[ecomp[1]] / maxval * p[2]))) for p in stylep] ...)
 end
 
 function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["red", "darkred"])
+    maxval::Number = maximum(vec)
+    divisions = length(colors)
+    div_amount = Int64(round(floor(maxval / divisions)))
+    laststep = 0
+    for color in colors
+        if vec[ecomp[1]] in laststep:div_amount
+            style!(ecomp[2], "fill" => color)
+            break
+        end
+        laststep, div_amount = div_amount, div_amount + div_amount
+    end
+end
+
+function set_shape!()
 
 end
 
