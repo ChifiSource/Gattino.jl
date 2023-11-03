@@ -1,7 +1,7 @@
 module Gattino
 using Toolips
-import Toolips: style!, write!
-import Base: getindex, setindex!, show, display
+import Toolips: style!, write!, animate!
+import Base: getindex, setindex!, show, display, vcat, push!, hcat
 using ToolipsDefaults
 using ToolipsSVG
 using Random: randstring
@@ -171,5 +171,6 @@ end
 
 hist(args ...; keyargs ...) = hist!(Context(500, 500), args ...; keyargs ...)
 
-export Group, group!, style!, px, pt, group, layers, context, move_layer, seconds, percent, Context
+export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
+export compose, delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!
 end # module

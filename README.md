@@ -3,15 +3,13 @@
 </div>
 <div align="left">
 
-Gattino is Toolips-based plotting for Julia. This project's base package is still in early development, but gattino plans to feature
-- An extension **ecosystem**.
-- Introspectable, mutable **high-level plotting**.
-- **Animated** visualizations.
-- **Interactive** visualizations.
-- **easy** styling syntax
-- In-ecosystem **dashboard toolkits**.
-- In-server **deployment**.
-- **Scaling** graphics.
+Gattino is Toolips-based, extensible plotting for Julia. `Gattino` features ...
+- an extension **ecosystem**
+- **modular** plot components
+- introspectable plots
+- **animated** visualizations.
+- toolips **components**
+- powerful **layout** syntax
 
 There is currently a lot underway when it comes to [Chifi](https://github.com/ChifiSource/) packages, so this package is currently a **work in progress**.
 ##### map
@@ -21,14 +19,16 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
 - [visualizations](#visualizations)
   - [creating visualizations](#creating-visualizations)
   - [layouts](#layouts)
-  - [styling layers](#styling-layers)
   - [working with layers](#working-with-layers)
+    - [styling layers](#styling-layers)
+    - [setting attributes](#setting-attributes)
   - [annotations](#annotations)
   - [animation](#animation)
 - [context plotting](#context-plotting)
   - [lines](#plotting-lines)
   - [shapes](#plotting-shapes)
   - [other](#plotting-other-stuff)
+- [dashboards](#dashboards)
 - [examples](#examples)
   - [styled multichart](#styled-multichart)
 - [adding more](#adding-more)
@@ -146,10 +146,65 @@ end
 
 <div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/layoutsdemonstration2.png"></img></div>
 
-The other way we are able to do layouts is by creating a `Vector{<:AbstractContext}`. This `Vector` will display as the totality of itself, concatenated with the shape. In other words a `Vector{Context}` with two `Contexts` of width **200** will display at width **400**.
+This form of layouts is **for the inside of a `Context`**. We also have the option to form layouts by placing Contexts next to eachother. To do this, use the `compose` function. This takes a name, the name of the window we want to create, and then our `Context`(s).
 ```julia
-TODO; This is still a planned feature.
+plt = context(200, 200) do con::Context
+    group!(con, "points") do g::Group
+        Gattino.points!(g, [5, 10, 15], [5, 10, 15])
+    end
+end
+plt2 = context(200, 200) do con::Context
+    group!(con, "points") do g::Group
+        Gattino.points!(g, [5, 10, 15], [5, 10, 15], "fill" => "blue")
+    end
+end
+n = compose("new", plt2, plt)
 ```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/composedemonstration.png"></img></div>
+
+With this technique, we are also able to add different types of contexts together, and this is very useful for making full dashboard layouts with very little effort. We have three main functions for this,
+```julia
+hcat
+push!
+vcat
+```
+Concatenating horizontally will add the `Context` horizontally, vertically will add it vertically and `push!` will of course also concatenate horizontally.
+```julia
+vcat(n, plt, plt2)
+```
+
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/composedemonstration2.png"></img></div>
+
+#### working with layers
+An important aspect to `Gattino` is the layering aspect. In `Gattino`, visualizations are premade from the [context plotting](#context-plotting) toolkit and then mutated by making changes to the layers. We are able to access the layers of an `AbstractContext` using the `layers` method.
+```julia
+layers(con::AbstractContext)
+```
+We can also index a `Context` with a `String` to retrieve a layer directly.
+```julia
+getindex(con::AbstractContext, str::String)
+```
+We can also mutate layers using the various methods `Gattino` provides to do so. These include
+- `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
+- `move_layer!(con::Context, layer::String, to::Int64)`
+- `delete_layer!(con::Context, layer::String)`
+- `open_layer!(f::Function, con::AbstractContext, layer::String)`
+- `merge!(c::AbstractContext, c2::AbstractContext)`
+
+The first in this list of methods is `style!`. There are two ways that we can provide styling to our elements, we are able to either provide the styles at the end of a [context plotting](#context-plotting) function,
+```julia
+```
+or we can use `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)` to style the layer after it exists. We are unable to provide these styles to the high-level `hist`, `scatter_plot!` or any methods like that, so considering this the use of `style!` will likely be pretty necessary in these cases. the `spairs` here are style `Pairs`, this will style all of the shapes on that layer.
+```julia
+```
+`move_layer!` and `delete_layer!` are both relatively straightforward. `move_layer!` can be used to reorder the drawing of layers, the first layer will always be drawn first and then get drawn over.
+```julia
+```
+Finally, `merge!` will combine two different context's layers into the same context. Note that this will not account for scaling in any capacity; if you want to concatenate with scaling, checkout the techniques put forth in [layouts](#layouts) instead.
+```julia
+```
+`open_layer!` is used to loop through the children inside of a layer. This is primarily used with functions which set attributes based on new features. There is a write up on using `open_layer!` in [setting attributes](#setting-attributes)
 ##### styling layers
 The first thing we are going to want to do with our new `Gattino` visualization is probably style it, for this we use the following style dispatch:
 - `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
@@ -174,45 +229,69 @@ style!(myhist, "labels", "stroke-width" => 0px, "fill" => "white", "font-weight"
 
 <div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/histstyled.png"></img></div>
 
-##### working with layers
-An important aspect to `Gattino` is the layering aspect. In `Gattino`, visualizations are premade from the [context plotting](#context-plotting) toolkit and then mutated by making changes to the layers. We are able to access the layers of an `AbstractContext` using the `layers` method.
-```julia
-layers(con::AbstractContext)
-```
-We can also index a `Context` with a `String` to retrieve a layer directly.
-```julia
-getindex(con::AbstractContext, str::String)
-```
-Let's grab a layer:
-```julia
-```
-We can also mutate layers using the various methods `Gattino` provides to do so. These include
-- `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
-- `move_layer!(con::Context, layer::String, to::Int64)`
-- `delete_layer!(con::Context, layer::String)`
-- `merge!(c::AbstractContext, c2::AbstractContext)`
+We may also style our window itself with
 
-The first in this list of methods is `style!`. There are two ways that we can provide styling to our elements, we are able to either provide the styles at the end of a [context plotting](#context-plotting) function,
 ```julia
+style!(myhist, "border" => "5px solid black")
 ```
-or we can use `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)` to style the layer after it exists. We are unable to provide these styles to the high-level `hist`, `scatter_plot!` or any methods like that, so considering this the use of `style!` will likely be pretty necessary in these cases. the `spairs` here are style `Pairs`, this will style all of the shapes on that layer.
+##### setting attributes
+An important aspect of data visualization is the ability to visualize multiple features, and `Gattino` provides several facilities for doing so. This is done by mutating points with new features inside of an `open_layer!` call. There are a few different functions which apply here from base `Gattino`:
+- `set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)`
+- `style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)`
+- `set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String})`
+- `set_shape!(ecomp::Pair{Int64, <:Toolips.Servable}, shape::Symbol)`
+
+To get started, we will create a visualization and then open a layer.
+
 ```julia
+mycon = context(500, 500) do con::Context
+    Gattino.scatter_plot!(con, firstfeature, secondfeature)
+end
+
+Gattino.open_layer!(mycon, "points") do ec
+
+end
 ```
-`move_layer!` and `delete_layer!` are both relatively straightforward. `move_layer!` can be used to reorder the drawing of layers, the first layer will always be drawn first and then get drawn over.
+Here, I will use `style!`, `set_gradient!`, and `set!` two show three different features:
 ```julia
+Gattino.open_layer!(mycon, "points") do ec
+     Gattino.set!(ec, :r, thirdfeature, max = 60)
+     style!(ec, fourth_feature, "stroke-width" => 10)
+     Gattino.set_gradient!(ec, fourth_feature)
+end
 ```
-```
-TODO image here
-```julia
-```
-Finally, `merge!` will combine two different context's layers into the same context. Note that this will not account for scaling in any capacity; if you want to concatenate with scaling, checkout the techniques put forth in [layouts](#layouts) instead.
+<div align="center"><img src="https://github.com/ChifiSource/image_dump/blob/main/gattino/docsc/opensample.png"></img></div>
+
 ##### annotations
+Because `Gattino` plot features are composable, we are able to easily annotate `Gattino` plots 
 ##### animation
+Animation in `Gattino` centers around `Toolips`' `Animation` syntax. To create an animation, we will call the `Animation` constructor, like so:
+```julia
+myanim = Animation("myanim", iterations = 1, length = 1.1)
+```
+Now we set the steps of our animation, this can be done with percentages or `:from` and `:to`:
+```julia
+myanim[:from] = "opacity" => 0percent
+myanim[:from] = "transform" => "scale(0)"
+myanim[:to] = "opacity" => 100percent
+myanim[:to] = "transform" => "scale(1)"
+```
+And we finish by calling `animate!` on our `Context` and selecting a layer:
+```julia
+plt = context(200, 200) do con::Context
+    group!(con, "points") do g::Group
+        Gattino.points!(g, [5, 10, 15], [5, 10, 15])
+    end
+    Gattino.animate!(con, "points", myanim)
+end
+```
+Once an animation is registered into a `Context`, it is there until that `Context` is recreated, or can be cleared manually from `Context.window.extras`. A defined animation can be set again when using [GattinoInteractive](https://github.com/ChifiSource/GattinoInteractive.jl) or a similar interactive extension package for `Gattino`.
 ## context plotting
 #### plotting lines
 #### plotting shapes
 #### plotting other stuff
-
+## dashboards
+`Gattino` is based on an extensible web-development framework for julia, `Toolips`. As a result, creating A `Gattino` dashboard mostly consists of composing `Gattino` visualizations and then serving them to a `Toolips` server or exporting them as HTML.
 ## examples
 #### styled multichart
 - [notebook](https://github.com/ChifiSource/OliveNotebooks.jl/blob/main/gattino/examples/styled_multichart.jl)
