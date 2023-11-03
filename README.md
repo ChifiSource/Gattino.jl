@@ -3,15 +3,13 @@
 </div>
 <div align="left">
 
-Gattino is Toolips-based plotting for Julia. This project's base package is still in early development, but gattino plans to feature
-- An extension **ecosystem**.
-- Introspectable, mutable **high-level plotting**.
-- **Animated** visualizations.
-- **Interactive** visualizations.
-- **easy** styling syntax
-- In-ecosystem **dashboard toolkits**.
-- In-server **deployment**.
-- **Scaling** graphics.
+Gattino is Toolips-based, extensible plotting for Julia. `Gattino` features ...
+- an extension **ecosystem**
+- **modular** plot components
+- introspectable plots
+- **animated** visualizations.
+- toolips **components**
+- powerful **layout** syntax
 
 There is currently a lot underway when it comes to [Chifi](https://github.com/ChifiSource/) packages, so this package is currently a **work in progress**.
 ##### map
