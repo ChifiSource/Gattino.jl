@@ -252,7 +252,7 @@ Gattino.open_layer!(mycon, "points") do ec
 
 end
 ```
-Here, I will use `style!`, `set_gradient!`, and `set!` two show three different features:
+Here, I will use `style!`, `set_gradient!`, and `set!` to show three different features:
 ```julia
 Gattino.open_layer!(mycon, "points") do ec
      Gattino.set!(ec, :r, thirdfeature, max = 60)
