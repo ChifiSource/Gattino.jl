@@ -115,6 +115,8 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layers(con)
 end
 
+set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
+
 function set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
     maxval::Number = maximum(vec)
     ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
@@ -125,7 +127,11 @@ function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, vec::Vector{<:N
     style!(ecomp[2], [p[1] => string(Int64(round(vec[ecomp[1]] / maxval * p[2]))) for p in stylep] ...)
 end
 
-function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["red", "darkred"])
+function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, key::String, vec::Vector{String})
+    style!(ecomp[2], key => vec[ecomp[1]])
+end
+
+function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
     maxval::Number = maximum(vec)
     divisions = length(colors)
     div_amount = Int64(round(floor(maxval / divisions)))
@@ -212,4 +218,24 @@ function animate!(con::AbstractContext, layer::String, animation::Animation)
     if isnothing(n)
         push!(con.window.extras, style, animation)
     end
+end
+
+function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
+    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
+    x2 = second[1], y2 = second[2])
+    style!(ln, styles ...)
+    draw!(con, [ln])
+end
+
+function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 13pt)
+    end
+    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
+    style!(t, styles ...)
+    draw!(con, [t])
 end
