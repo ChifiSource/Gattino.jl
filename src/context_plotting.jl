@@ -151,7 +151,7 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     percvec_y::Vector{<:Number} = map(n::Number -> n / ymax, y)
     draw!(con, Vector{Servable}([begin
         c = circle(randstring(), cx = pointx * con.dim[1] + con.margin[1],
-                cy = con.dim[2] - (con.dim[2] * pointy) + con.margin[2], r = "5")
+                cy = con.dim[2] - (con.dim[2] * pointy) + con.margin[2], r = 5)
             style!(c, styles ...)
             c
         end for (pointx, pointy) in zip(percvec_x, percvec_y)]))
@@ -210,11 +210,37 @@ function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::P
 end
 
 function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
-
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    n_features::Int64 = length(x)
+    ymax::Number = maximum(y)
+    n = 0
+    percvec_y = map(n::Number -> n / ymax, y)
+    block_width = Int64(round(con.dim[2] / n_features))
+    rects = Vector{Servable}([begin
+        scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
+        rct = ToolipsSVG.rect(randstring(), x = 0, y = n, 
+        width = con.dim[1] - (con.dim[1] - scaled_y), height = block_width)
+        style!(rct, styles ...)
+        n += block_width
+        rct
+    end for e in 1:n_features])
+    draw!(con, rects)
 end
 
-function v_barlabels!(con::AbstractContext, x::Vector{AbstractString})
-
+function v_barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 11pt)
+    end
+    n_features::Int64 = length(x)
+    block_width = Int64(round(con.dim[2] / n_features))
+    offset::Int64 = Int64(round(block_width * .5))
+    perm_x = Int64(round(con.dim[1] * .14))
+    [begin
+        text!(con, perm_x + con.margin[1], yval + offset + con.margin[2], x[e], styles ...)
+    end for (e, yval) in enumerate(range(1, n_features * block_width, step = block_width))]
+    return
 end
 
 function whisker_box!(con::AbstractContext)
@@ -223,6 +249,7 @@ end
 
 function vwhisker_boxes!(con::AbstractContext)
 
+end
 function legend!(con::AbstractContext, layers::Vector{String}, styles::Pair{String, String})
 
 end

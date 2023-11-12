@@ -4,7 +4,7 @@ import Toolips: style!, write!, animate!
 import Base: getindex, setindex!, show, display, vcat, push!, hcat
 using ToolipsDefaults
 using ToolipsSVG
-import ToolipsSVG: size, position
+import ToolipsSVG: size, position, set_position!, set_size!
 using Random: randstring
 
 include("context_plotting.jl")
