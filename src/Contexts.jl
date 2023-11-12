@@ -145,8 +145,14 @@ function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Num
     end
 end
 
-function set_shape!()
-
+function set_shape!(ecomp::Pair{Int64, <:Toolips.Servable}, shape::Component{<:Any})
+    dim = size(shape)
+    pos = position(shape)
+    newshape = Component(shape.tag, ecomp[1].name)
+    newshape.properties = ecomp[2].properties
+    set_size!(newshape, dim ...)
+    set_position!(newshape, pos ...)
+    ecomp[2] = newshape
 end
 
 function show(io::IO, con::AbstractContext)
@@ -239,3 +245,38 @@ function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::P
     style!(t, styles ...)
     draw!(con, [t])
 end
+
+function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int64, points::Int64 = 5, 
+    outer_radius::Int64 = 100, inner_radius::Int64 = 200, angle::Number = pi / points, args ...)
+    step = pi / points
+    points = join([begin
+    r = e%2 == 0 ? inner_radius : outer_radius
+    posx = x + r * cos(i)
+    posy = y + r * sin(i)
+    "$posx $posy"
+end for (e, i) in enumerate(range(0, step * (points * 2), step = step))], ",")
+comp = Component(name, "star", "points" => "'$points'", p ..., args ...)
+comp.tag = "polygon"
+comp[:x], comp[:y] = x, y
+comp[:r] = outer_radius
+comp::Component{:star}
+end
+
+function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 = 0, 
+    sides::Int64 = 3, r::Int64 = 100, angle::Number = 2 * pi / sides, args ...)
+points = join([begin
+    posx = r + r * sin(i * angle)
+    posy = y + r * cos(i * angle)
+    "$posx $posy"
+end for i in 1:sides], ",")
+comp = Component(name, "shape", "points" => "'$points'", p ..., args ...)
+comp.tag = "polygon"
+comp::Component{:shape}
+end
+
+
+set_size!(comp::Component{:star}, w::Int64, h::Int64) = comp[:r] = width
+
+set_size!(comp::Component{:shape}, w::Int64, h::Int64) = comp[:r] = width
+
+size(comp::Component{:shape}, w::Int64, h::Int64) = (comp[:r], comp[:r])
