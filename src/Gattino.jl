@@ -1,9 +1,10 @@
 module Gattino
 using Toolips
 import Toolips: style!, write!, animate!
-import Base: getindex, setindex!, show, display, vcat, push!, hcat
+import Base: getindex, setindex!, show, display, vcat, push!, hcat, size
 using ToolipsDefaults
 using ToolipsSVG
+import ToolipsSVG: position, set_position!, set_size!
 using Random: randstring
 
 include("context_plotting.jl")
@@ -169,8 +170,9 @@ function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divi
     con::AbstractContext
 end
 
-hist(args ...; keyargs ...) = hist!(Context(500, 500), args ...; keyargs ...)
+hist(x::Vector{<:Any}, args ...; keyargs ...) = hist!(Context(500, 500), x, args ...; keyargs ...)
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
 export compose, delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!
+export hist, scatter, line
 end # module

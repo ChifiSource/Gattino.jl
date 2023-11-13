@@ -115,6 +115,92 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layers(con)
 end
 
+
+function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
+    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
+    x2 = second[1], y2 = second[2])
+    style!(ln, styles ...)
+    draw!(con, [ln])
+end
+
+function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 13pt)
+    end
+    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
+    style!(t, styles ...)
+    draw!(con, [t])
+end
+
+function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int64, points::Int64 = 5, 
+    outer_radius::Int64 = 100, inner_radius::Int64 = 200, angle::Number = pi / points, args ...)
+    spoints = star_points(x, y, points, outer_radius, inner_radius, angle)
+    comp = Component(name, "star", "points" => "'$spoints'", p ..., args ...)
+    comp.tag = "polygon"
+    push!(comp.properties, :x => x, :y => y, :r => outer_radius, :angle => angle, 
+    :np => points)
+    comp::Component{:star}
+end
+
+function star_points(x::Int64, y::Int64, points::Int64, outer_radius::Int64, inner_radius::Int64, 
+    angle::Number)
+    step = pi / points
+    join([begin
+        r = e%2 == 0 ? inner_radius : outer_radius
+        posx = x + r * cos(i)
+        posy = y + r * sin(i)
+        "$posx $posy"
+    end for (e, i) in enumerate(range(0, step * (points * 2), step = step))], ",")::String
+end
+
+function shape_points(x::Int64, y::Int64, r::Int64, sides::Int64, angle::Number)
+    join([begin
+        posx = r + r * sin(i * angle)
+        posy = y + r * cos(i * angle)
+        "$posx $posy"
+    end for i in 1:sides], ",")::String
+end
+
+function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 = 0, 
+    sides::Int64 = 3, r::Int64 = 100, angle::Number = 2 * pi / sides, args ...)
+    points = shape_points(x, y, r, sides, angle)
+    comp = Component(name, "shape", "points" => "'$points'", p ..., args ...)
+    comp.tag = "polygon"
+    push!(comp.properties, :x => x, :y => y, :r => r, :sides => sides, :angle => angle)
+    comp::Component{:shape}
+end
+
+struct GattinoShape{T <: Any} end
+
+shape(comp::Component{<:Any}) = GattinoShape{typeof(comp).parameters[1]}()
+
+reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(comp, GattinoShape{into}(); args ...)
+
+function reshape(shape::Component{:circle}, into::GattinoShape{:star}; outer_radius::Int64 = 5, inner_radius::Int64 = 3,
+    points::Int64 = 5, args ...)
+    s = ToolipsSVG.position(shape)
+    star(shape.name, x = s[1], y = s[2], outer_radius = outer_radius, inner_radius = inner_radius, points = points)::Component{:star}
+end
+
+function reshape(comp::Component{:circle}, into::GattinoShape{:shape}; sides::Int64 = 3, r::Int64 = 5, angle::Number = 2 * pi / sides, args ...)
+    s = ToolipsSVG.position(comp)
+    shape(comp.name, x = s[1], y = s[2], sides = sides, r = r, angle = angle)::Component{:shape}
+end
+
+function size(comp::Component{:star})
+    (comp[:r], comp[:r])
+end
+
+function size(comp::Component{:shape})
+    (comp[:r], comp[:r])
+end
+
+set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
+
 function set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
     maxval::Number = maximum(vec)
     ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
@@ -125,7 +211,11 @@ function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, vec::Vector{<:N
     style!(ecomp[2], [p[1] => string(Int64(round(vec[ecomp[1]] / maxval * p[2]))) for p in stylep] ...)
 end
 
-function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["red", "darkred"])
+function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, key::String, vec::Vector{String})
+    style!(ecomp[2], key => vec[ecomp[1]])
+end
+
+function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
     maxval::Number = maximum(vec)
     divisions = length(colors)
     div_amount = Int64(round(floor(maxval / divisions)))
@@ -137,10 +227,6 @@ function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Num
         end
         laststep, div_amount = div_amount, div_amount + div_amount
     end
-end
-
-function set_shape!()
-
 end
 
 function show(io::IO, con::AbstractContext)

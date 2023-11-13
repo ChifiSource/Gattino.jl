@@ -1,27 +1,7 @@
 include("Contexts.jl")
 
-function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
-    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
-    end
-    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
-    x2 = second[1], y2 = second[2])
-    style!(ln, styles ...)
-    draw!(con, [ln])
-end
-
-function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "black", "font-size" => 13pt)
-    end
-    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
-    style!(t, styles ...)
-    draw!(con, [t])
-end
-
 function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
-        styles::Pair{String, <:Any} ...)
+        styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
@@ -32,7 +12,7 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     unique_strings = unique(x)
     string_map = Dict(unique_strings[i] => i for i in 1:length(unique_strings))
     numeric_x = [string_map[s] for s in x]
-    xmax::Number, ymax::Number = maximum(numeric_x), maximum(y)
+    xmax::Number = maximum(numeric_x)
     percvec_x = map(n::Number -> n / xmax, numeric_x)
     percvec_y = map(n::Number -> n / ymax, y)
     line_data = join([begin
@@ -163,16 +143,15 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
 end
 
 function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-     styles::Pair{String, <:Any} ...)
+     styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), r::Int64 = 5)
     if length(styles) == 0
         styles = ("fill" => "orange", "stroke" => "lightblue", "stroke-width" => "0")
     end
-    xmax::Number, ymax::Number = maximum(x), maximum(y)
-     percvec_x = map(n::Number -> n / xmax, x)
-     percvec_y = map(n::Number -> n / ymax, y)
+    percvec_x::Vector{<:Number} = map(n::Number -> n / xmax, x)
+    percvec_y::Vector{<:Number} = map(n::Number -> n / ymax, y)
     draw!(con, Vector{Servable}([begin
-        c = circle(randstring(), cx = string(pointx * con.dim[1] + con.margin[1]),
-                cy = string(con.dim[2] - (con.dim[2] * pointy) + con.margin[2]), r = "5")
+        c = circle(randstring(), cx = Int64(round(pointx * con.dim[1] + con.margin[1])),
+                cy = Int64(round(con.dim[2] - (con.dim[2] * pointy) + con.margin[2])), r = r)
             style!(c, styles ...)
             c
         end for (pointx, pointy) in zip(percvec_x, percvec_y)]))
@@ -192,7 +171,7 @@ function axislabels!(con::AbstractContext, styles::Pair{String, <:Any} ...)
 
 end
 
-function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
+function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
@@ -212,8 +191,8 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     draw!(con, rects)
 end
 
-bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...) = begin
-    bars!(con, [string(v) for v in x], y, styles ...)
+bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y)) = begin
+    bars!(con, [string(v) for v in x], y, styles ...; ymax = ymax)
 end
 
 function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
@@ -231,13 +210,47 @@ function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::P
 end
 
 function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    n_features::Int64 = length(x)
+    ymax::Number = maximum(y)
+    n = 0
+    percvec_y = map(n::Number -> n / ymax, y)
+    block_width = Int64(round(con.dim[2] / n_features))
+    rects = Vector{Servable}([begin
+        scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
+        rct = ToolipsSVG.rect(randstring(), x = 0, y = n, 
+        width = con.dim[1] - (con.dim[1] - scaled_y), height = block_width)
+        style!(rct, styles ...)
+        n += block_width
+        rct
+    end for e in 1:n_features])
+    draw!(con, rects)
+end
+
+function v_barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 11pt)
+    end
+    n_features::Int64 = length(x)
+    block_width = Int64(round(con.dim[2] / n_features))
+    offset::Int64 = Int64(round(block_width * .5))
+    perm_x = Int64(round(con.dim[1] * .14))
+    [begin
+        text!(con, perm_x + con.margin[1], yval + offset + con.margin[2], x[e], styles ...)
+    end for (e, yval) in enumerate(range(1, n_features * block_width, step = block_width))]
+    return
+end
+
+function whisker_box!(con::AbstractContext)
 
 end
 
-function v_barlabels!(con::AbstractContext, x::Vector{AbstractString})
+function vwhisker_boxes!(con::AbstractContext)
 
 end
 
-function legend!(con::AbstractContext, x::Vector{Pair{String, Component{<:Any}}})
+function legend!(con::AbstractContext, layers::Vector{String}, styles::Pair{String, String})
 
 end
