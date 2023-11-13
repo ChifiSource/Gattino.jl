@@ -143,7 +143,7 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
 end
 
 function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-     styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x))
+     styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), r::Int64 = 5)
     if length(styles) == 0
         styles = ("fill" => "orange", "stroke" => "lightblue", "stroke-width" => "0")
     end
@@ -151,7 +151,7 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     percvec_y::Vector{<:Number} = map(n::Number -> n / ymax, y)
     draw!(con, Vector{Servable}([begin
         c = circle(randstring(), cx = Int64(round(pointx * con.dim[1] + con.margin[1])),
-                cy = Int64(round(con.dim[2] - (con.dim[2] * pointy) + con.margin[2])), r = 5)
+                cy = Int64(round(con.dim[2] - (con.dim[2] * pointy) + con.margin[2])), r = r)
             style!(c, styles ...)
             c
         end for (pointx, pointy) in zip(percvec_x, percvec_y)]))

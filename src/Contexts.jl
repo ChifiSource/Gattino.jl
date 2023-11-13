@@ -174,6 +174,22 @@ function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 
     comp::Component{:shape}
 end
 
+struct GattinoShape{T <: Any} end
+
+shape(comp::Component{<:Any}) = GattinoShape{typeof(comp).parameters[1]}()
+
+reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(comp, GattinoShape{into}(); args ...)
+
+function reshape(shape::Component{:circle}, into::GattinoShape{:star}; outer_radius::Int64 = 5, inner_radius::Int64 = 3,
+    points::Int64 = 5, args ...)
+    s = ToolipsSVG.position(shape)
+    star(shape.name, x = s[1], y = s[2], outer_radius = outer_radius, inner_radius = inner_radius, points = points)::Component{:star}
+end
+
+function reshape(comp::Component{:circle}, into::GattinoShape{:shape}; sides::Int64 = 3, r::Int64 = 5, angle::Number = 2 * pi / sides, args ...)
+    s = ToolipsSVG.position(comp)
+    shape(comp.name, x = s[1], y = s[2], sides = sides, r = r, angle = angle)::Component{:shape}
+end
 
 function size(comp::Component{:star})
     (comp[:r], comp[:r])
@@ -181,38 +197,6 @@ end
 
 function size(comp::Component{:shape})
     (comp[:r], comp[:r])
-end
-
-set_size!(comp::Component{:star}, w::Int64, h::Int64) = begin
-    comp[:r] = w
-    comp["points"] = "'$(star_points(comp[:x], comp[:y], comp[:np], comp[:r], comp[:r] - Int64(round(comp[:r] * .5)), comp[:angle]))'"
-end
-
-set_size!(comp::Component{:shape}, w::Int64, h::Int64) = begin
-    comp[:r] = w
-    comp["points"] = shape_points(comp[:x], comp[:y], w, comp[:sides], comp[:angle])
-end
-
-set_position!(comp::Component{:star}, x::Int64, y::Int64) = begin
-    comp[:x], comp[:y] = x, y
-    comp["points"] = "'$(star_points(comp[:x], comp[:y], comp[:np], comp[:r], comp[:r] - Int64(round(comp[:r] * .5)), comp[:angle]))'"
-end
-
-set_position!(comp::Component{:shape}, x::Int64, y::Int64) = begin
-    comp[:x], comp[:y] = x, y
-    comp["points"] = shape_points(comp[:x], comp[:y], comp[:r], comp[:sides], comp[:angle])
-end
-
-function set_shape!(con::AbstractContext, layer::String, shape::Component{<:Any})
-    con.window[:children][layer][:children] = [begin
-        pos = position(comp)
-        param = typeof(shape).parameters[1]
-        newshape = Component(comp.name, string(param))
-        newshape.properties, newshape.tag = shape.properties, shape.tag
-        set_position!(newshape, pos ...)
-        newshape
-    end for comp in con.window[:children][layer][:children]]
-    return
 end
 
 set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
