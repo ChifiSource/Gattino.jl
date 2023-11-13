@@ -115,6 +115,106 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layers(con)
 end
 
+
+function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
+    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
+    x2 = second[1], y2 = second[2])
+    style!(ln, styles ...)
+    draw!(con, [ln])
+end
+
+function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 13pt)
+    end
+    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
+    style!(t, styles ...)
+    draw!(con, [t])
+end
+
+function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int64, points::Int64 = 5, 
+    outer_radius::Int64 = 100, inner_radius::Int64 = 200, angle::Number = pi / points, args ...)
+    spoints = star_points(x, y, points, outer_radius, inner_radius, angle)
+    comp = Component(name, "star", "points" => "'$spoints'", p ..., args ...)
+    comp.tag = "polygon"
+    push!(comp.properties, :x => x, :y => y, :r => outer_radius, :angle => angle, 
+    :np => points)
+    comp::Component{:star}
+end
+
+function star_points(x::Int64, y::Int64, points::Int64, outer_radius::Int64, inner_radius::Int64, 
+    angle::Number)
+    step = pi / points
+    join([begin
+        r = e%2 == 0 ? inner_radius : outer_radius
+        posx = x + r * cos(i)
+        posy = y + r * sin(i)
+        "$posx $posy"
+    end for (e, i) in enumerate(range(0, step * (points * 2), step = step))], ",")::String
+end
+
+function shape_points(x::Int64, y::Int64, r::Int64, sides::Int64, angle::Number)
+    join([begin
+        posx = r + r * sin(i * angle)
+        posy = y + r * cos(i * angle)
+        "$posx $posy"
+    end for i in 1:sides], ",")::String
+end
+
+function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 = 0, 
+    sides::Int64 = 3, r::Int64 = 100, angle::Number = 2 * pi / sides, args ...)
+    points = shape_points(x, y, r, sides, angle)
+    comp = Component(name, "shape", "points" => "'$points'", p ..., args ...)
+    comp.tag = "polygon"
+    push!(comp.properties, :x => x, :y => y, :r => r, :sides => sides, :angle => angle)
+    comp::Component{:shape}
+end
+
+
+function size(comp::Component{:star})
+    (comp[:r], comp[:r])
+end
+
+function size(comp::Component{:shape})
+    (comp[:r], comp[:r])
+end
+
+set_size!(comp::Component{:star}, w::Int64, h::Int64) = begin
+    comp[:r] = w
+    comp["points"] = "'$(star_points(comp[:x], comp[:y], comp[:np], comp[:r], comp[:r] - Int64(round(comp[:r] * .5)), comp[:angle]))'"
+end
+
+set_size!(comp::Component{:shape}, w::Int64, h::Int64) = begin
+    comp[:r] = w
+    comp["points"] = shape_points(comp[:x], comp[:y], w, comp[:sides], comp[:angle])
+end
+
+set_position!(comp::Component{:star}, x::Int64, y::Int64) = begin
+    comp[:x], comp[:y] = x, y
+    comp["points"] = "'$(star_points(comp[:x], comp[:y], comp[:np], comp[:r], comp[:r] - Int64(round(comp[:r] * .5)), comp[:angle]))'"
+end
+
+set_position!(comp::Component{:shape}, x::Int64, y::Int64) = begin
+    comp[:x], comp[:y] = x, y
+    comp["points"] = shape_points(comp[:x], comp[:y], comp[:r], comp[:sides], comp[:angle])
+end
+
+function set_shape!(con::AbstractContext, layer::String, shape::Component{<:Any})
+    con.window[:children][layer][:children] = [begin
+        pos = position(comp)
+        param = typeof(shape).parameters[1]
+        newshape = Component(comp.name, string(param))
+        newshape.properties, newshape.tag = shape.properties, shape.tag
+        set_position!(newshape, pos ...)
+        newshape
+    end for comp in con.window[:children][layer][:children]]
+    return
+end
+
 set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
 
 function set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
@@ -143,16 +243,6 @@ function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Num
         end
         laststep, div_amount = div_amount, div_amount + div_amount
     end
-end
-
-function set_shape!(ecomp::Pair{Int64, <:Toolips.Servable}, shape::Component{<:Any})
-    dim = size(shape)
-    pos = position(shape)
-    newshape = Component(shape.tag, ecomp[1].name)
-    newshape.properties = ecomp[2].properties
-    set_size!(newshape, dim ...)
-    set_position!(newshape, pos ...)
-    ecomp[2] = newshape
 end
 
 function show(io::IO, con::AbstractContext)
@@ -225,58 +315,3 @@ function animate!(con::AbstractContext, layer::String, animation::Animation)
         push!(con.window.extras, style, animation)
     end
 end
-
-function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
-    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
-    end
-    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
-    x2 = second[1], y2 = second[2])
-    style!(ln, styles ...)
-    draw!(con, [ln])
-end
-
-function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "black", "font-size" => 13pt)
-    end
-    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
-    style!(t, styles ...)
-    draw!(con, [t])
-end
-
-function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int64, points::Int64 = 5, 
-    outer_radius::Int64 = 100, inner_radius::Int64 = 200, angle::Number = pi / points, args ...)
-    step = pi / points
-    points = join([begin
-    r = e%2 == 0 ? inner_radius : outer_radius
-    posx = x + r * cos(i)
-    posy = y + r * sin(i)
-    "$posx $posy"
-end for (e, i) in enumerate(range(0, step * (points * 2), step = step))], ",")
-comp = Component(name, "star", "points" => "'$points'", p ..., args ...)
-comp.tag = "polygon"
-comp[:x], comp[:y] = x, y
-comp[:r] = outer_radius
-comp::Component{:star}
-end
-
-function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 = 0, 
-    sides::Int64 = 3, r::Int64 = 100, angle::Number = 2 * pi / sides, args ...)
-points = join([begin
-    posx = r + r * sin(i * angle)
-    posy = y + r * cos(i * angle)
-    "$posx $posy"
-end for i in 1:sides], ",")
-comp = Component(name, "shape", "points" => "'$points'", p ..., args ...)
-comp.tag = "polygon"
-comp::Component{:shape}
-end
-
-
-set_size!(comp::Component{:star}, w::Int64, h::Int64) = comp[:r] = width
-
-set_size!(comp::Component{:shape}, w::Int64, h::Int64) = comp[:r] = width
-
-size(comp::Component{:shape}, w::Int64, h::Int64) = (comp[:r], comp[:r])

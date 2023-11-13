@@ -1,10 +1,10 @@
 module Gattino
 using Toolips
 import Toolips: style!, write!, animate!
-import Base: getindex, setindex!, show, display, vcat, push!, hcat
+import Base: getindex, setindex!, show, display, vcat, push!, hcat, size
 using ToolipsDefaults
 using ToolipsSVG
-import ToolipsSVG: size, position, set_position!, set_size!
+import ToolipsSVG: position, set_position!, set_size!
 using Random: randstring
 
 include("context_plotting.jl")
