@@ -212,6 +212,11 @@ end
 
 hist(x::Vector{<:Any}, args ...; keyargs ...) = hist!(Context(500, 500), x, args ...; keyargs ...)
 
+function hist(x::Any, y::Vector{<:Any})
+    pairs = [name => col for (name, col) in zip(names(df), eachcol(df))]
+
+end
+
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
 export compose, delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!
 export hist, scatter, line

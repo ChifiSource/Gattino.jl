@@ -197,8 +197,8 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     draw!(con, rects)
 end
 
-function bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y)) = begin
-    bars!(con, [string(v) for v in x], y, styles ...; ymax = ymax)
+function bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
+    bars!(con, [string(v) for v in x], y, styles ..., ymax = ymax)
 end
 
 function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
@@ -261,6 +261,41 @@ function axislabels!(con::AbstractContext, xlabel::AbstractString, ylabel::Abstr
     nothing
 end
 
-function legend!(con::AbstractContext, styles::Pair{String, String} ...)
-
+function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right")
+    if length(styles) == 0
+        styles = ("stroke" => "darkgray", "fill" => "white", "stroke-width" => 2px)
+    end
+    legg = ToolipsSVG.g("legend")
+    positionx = Int64(round(con.dim[1] / 2)) + con.margin[1]
+    scaler = Int64(round(con.dim[1] * .24))
+    if contains(align, "right")
+        positionx += scaler
+    elseif contains(align, "left")
+        positionx -= scaler
+    end
+    positiony = Int64(round(con.dim[2] / 2)) + con.margin[2]
+    scaler = Int64(round(con.dim[2] * .20))
+    if contains(align, "top")
+        positiony -= scaler
+    elseif contains(align, "bottom")
+        positiony += scaler
+    end
+    ww = Int64(round(con.dim[1]) * .20)
+    legbox = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
+    width = ww, height = 50)
+    style!(legbox, styles ...)
+    sample_width = 20
+    sample_height = 20
+    sample_margin = 10
+    push!(legg, legbox)
+    [begin
+        samp = con.window[:children][name][:children][1]
+        set_position!(samp, positionx + sample_margin * e, positiony + sample_margin * e)
+        samplabel = ToolipsSVG.text(randstring(), x = positionx + sample_margin * e, y = positiony + (sample_margin * e * 1.3),
+        text = name)
+        style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
+        push!(legg, samp, samplabel)
+    end for (e, name) in enumerate(names)]
+    push!(con.window, legg)
+  #  legbox[:children]
 end
