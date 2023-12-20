@@ -107,6 +107,11 @@ function delete_layer!(con::Context, layer::String)
     layers(con)
 end
 
+rename_layer!(con::Context, layer::String, to::String) = begin
+    l = con.window[:children][layer]
+    l.name = to
+end
+
 function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
     layercomp::Toolips.AbstractComponent = con.window[:children][layer]
@@ -178,7 +183,14 @@ struct GattinoShape{T <: Any} end
 
 shape(comp::Component{<:Any}) = GattinoShape{typeof(comp).parameters[1]}()
 
-reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(comp, GattinoShape{into}(); args ...)
+reshape(comp::Any, into::Symbol; args ...) = reshape(comp, GattinoShape{into}(); args ...)
+
+reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(shape, GattinoShape{into}(); args ...)
+
+function reshape(con::AbstractContext, layer::String, into::Symbol; args ...)
+    shape = GattinoShape{into}()
+    con.window[:children][layer][:children] = [reshape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
+end
 
 function reshape(shape::Component{:circle}, into::GattinoShape{:star}; outer_radius::Int64 = 5, inner_radius::Int64 = 3,
     points::Int64 = 5, args ...)

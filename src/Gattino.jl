@@ -212,8 +212,9 @@ end
 
 hist(x::Vector{<:Any}, args ...; keyargs ...) = hist!(Context(500, 500), x, args ...; keyargs ...)
 
+
 function hist(x::Any, y::Vector{<:Any})
-    pairs = [name => col for (name, col) in zip(names(df), eachcol(df))]
+    pairs = [name => col for (name, col) in zip(names(x), eachcol(x))]
 
 end
 

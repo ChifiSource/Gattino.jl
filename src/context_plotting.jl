@@ -290,12 +290,11 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
     push!(legg, legbox)
     [begin
         samp = con.window[:children][name][:children][1]
-        set_position!(samp, positionx + sample_margin * e, positiony + sample_margin * e)
-        samplabel = ToolipsSVG.text(randstring(), x = positionx + sample_margin * e, y = positiony + (sample_margin * e * 1.3),
+        set_position!(samp, positionx + sample_margin, positiony + sample_margin * e)
+        samplabel = ToolipsSVG.text(randstring(), x = positionx + sample_margin * 2, y = positiony + (sample_margin * e * 1.3),
         text = name)
         style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
         push!(legg, samp, samplabel)
     end for (e, name) in enumerate(names)]
     push!(con.window, legg)
-  #  legbox[:children]
 end
