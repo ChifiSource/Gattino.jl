@@ -281,20 +281,44 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
         positiony += scaler
     end
     ww = Int64(round(con.dim[1]) * .20)
+    hh = length(names) * 20
     legbox = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
-    width = ww, height = 50)
+    width = ww, height = hh)
     style!(legbox, styles ...)
     sample_width = 20
     sample_height = 20
-    sample_margin = 10
+    sample_margin = 12
     push!(legg, legbox)
     [begin
         samp = con.window[:children][name][:children][1]
+        samp.name = "$(name)-preview"
         set_position!(samp, positionx + sample_margin, positiony + sample_margin * e)
-        samplabel = ToolipsSVG.text(randstring(), x = positionx + sample_margin * 2, y = positiony + (sample_margin * e * 1.3),
+        samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * e * 1.15),
         text = name)
         style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
         push!(legg, samp, samplabel)
     end for (e, name) in enumerate(names)]
     push!(con.window, legg)
+end
+
+function append_legend!(con::AbstractContext, name::String)
+    legend = con["legend"]
+    n_features = length(legend[:children]) - 1
+    box = legend[:children]["legendbg"]
+    positionx, positiony = box[:x], box[:y]
+    samp = con.window[:children][name][:children][1]
+    box[:height] += 20
+    sample_width = 20
+    sample_height = 20
+    sample_margin = 12
+    set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features - 1))
+    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features - 1) * 1.15),
+    text = name)
+    style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
+    push!(legend, samp, samplabel)
+    nothing
+end
+
+function remove_legend!(con::AbstractContext, name::String)
+
 end
