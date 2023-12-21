@@ -1,7 +1,7 @@
 module Gattino
 using Toolips
 import Toolips: style!, write!, animate!
-import Base: getindex, setindex!, show, display, vcat, push!, hcat, size
+import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape
 using ToolipsDefaults
 using ToolipsSVG
 import ToolipsSVG: position, set_position!, set_size!

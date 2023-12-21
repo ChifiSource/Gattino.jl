@@ -147,8 +147,15 @@ function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int
     comp = Component(name, "star", "points" => "'$spoints'", p ..., args ...)
     comp.tag = "polygon"
     push!(comp.properties, :x => x, :y => y, :r => outer_radius, :angle => angle, 
-    :np => points)
+    :np => points, :ir => inner_radius)
     comp::Component{:star}
+end
+
+set_position!(comp::Component{:star}, x::Number, y::Number) = begin
+    pnts, angle, outer_radius, ir = comp[:np], comp[:angle], comp[:r], comp[:ir]
+    spoints = star_points(x, y, pnts, outer_radius, ir, angle)
+    comp["points"] = "'$spoints'"
+    nothing
 end
 
 function star_points(x::Int64, y::Int64, points::Int64, outer_radius::Int64, inner_radius::Int64, 
@@ -164,7 +171,7 @@ end
 
 function shape_points(x::Int64, y::Int64, r::Int64, sides::Int64, angle::Number)
     join([begin
-        posx = r + r * sin(i * angle)
+        posx = x + r * sin(i * angle)
         posy = y + r * cos(i * angle)
         "$posx $posy"
     end for i in 1:sides], ",")::String
@@ -196,6 +203,13 @@ function reshape(shape::Component{:circle}, into::GattinoShape{:star}; outer_rad
     points::Int64 = 5, args ...)
     s = ToolipsSVG.position(shape)
     star(shape.name, x = s[1], y = s[2], outer_radius = outer_radius, inner_radius = inner_radius, points = points)::Component{:star}
+end
+
+function reshape(shape::Component{:circle}, into::GattinoShape{:square}; outer_radius::Int64 = 5, inner_radius::Int64 = 3,
+    points::Int64 = 5, args ...)
+    xy = ToolipsSVG.position(shape)
+    rad = shape[:r]
+    rect(randstring(4), x = xy[1] - rad, y = xy[2] - rad, width = rad, height = rad)::Component{:rect}
 end
 
 function reshape(comp::Component{:circle}, into::GattinoShape{:shape}; sides::Int64 = 3, r::Int64 = 5, angle::Number = 2 * pi / sides, args ...)
