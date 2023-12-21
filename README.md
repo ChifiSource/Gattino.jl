@@ -23,6 +23,8 @@ There is currently a lot underway when it comes to [Chifi](https://github.com/Ch
     - [styling layers](#styling-layers)
     - [editing layers](#editing-layers)
     - [setting attributes](#setting-attributes)
+    - [shape](#shape)
+  - [legends](#legends)
   - [annotations](#annotations)
   - [animation](#animation)
 - [context plotting](#context-plotting)
