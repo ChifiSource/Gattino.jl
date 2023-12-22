@@ -48,8 +48,16 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
     ystep = (y_max - y_min) / n
     cy = y_max
     [begin
-        text!(con, xcoord + mx, con.dim[2] - 10 + my, string(cx), styles...)
-        text!(con, 0 + mx, ycoord + my, string(cy), styles...)
+        txt = string(cx)
+        if length(txt) > 7
+            txt = txt[1:6]
+        end
+        text!(con, xcoord + mx, con.dim[2] - 10 + my, txt, styles...)
+        txt = string(cy)
+        if length(txt) > 7
+            txt = txt[1:6]
+        end
+        text!(con, 0 + mx, ycoord + my, txt, styles...)
         cx += xstep
         cy -= ystep
     end for (xcoord, ycoord) in zip(
@@ -70,7 +78,11 @@ ystep = (y_max - y_min) / n
 permx = Int64(round(con.dim[1] * 0.05))
 cy = y_max
 [begin
-text!(con, permx + mx, ycoord + my + y_offset, string(cy), styles ...)
+txt = string(cy)
+if length(txt) > 7
+    txt = txt[1:6]
+end
+text!(con, permx + mx, ycoord + my + y_offset, txt, styles ...)
 cy -= ystep
 end for ycoord in range(Int64(round(y_min)), con.dim[2], step=division_amounty)]
 end
@@ -96,7 +108,11 @@ cy = y_max
     if cx <= length(unique_strings)
         text!(con, xcoord + mx - x_offset, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
     end
-    text!(con, 0 + mx, ycoord + my - y_offset, string(cy), styles ...)
+    txt = string(cy)
+    if length(txt) > 7
+        txt = txt[1:6]
+    end
+    text!(con, 0 + mx, ycoord + my - y_offset, txt, styles ...)
     cx += xstep
     cy -= ystep
     end for (xcoord, ycoord) in zip(
@@ -170,10 +186,6 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
      con.dim[1] + con.margin[1] => con.dim[2] + con.margin[2], styles ...)
     line!(con, con.margin[1] => con.margin[2],
      con.margin[1] => con.dim[2] + con.margin[2], styles ...)
-end
-
-function axislabels!(con::AbstractContext, styles::Pair{String, <:Any} ...)
-
 end
 
 function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
