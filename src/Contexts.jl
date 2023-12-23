@@ -20,6 +20,29 @@ function compose(name::String, cons::AbstractContext ...)
     newdiv::Component{:div}
 end
 
+function vcat(comp::AbstractContext, cons::AbstractContext ...)
+    newdiv = div(randstring(3))
+    style!(comp.window, "display" => "inline-block")
+    push!(newdiv, comp.window)
+    push!(newdiv, br())
+    [begin
+        style!(co.window, "display" => "inline-block")
+        push!(newdiv, co.window)
+    end for co in cons]
+    newdiv
+end
+
+function hcat(comp::AbstractContext, cons::AbstractContext ...)
+    newdiv = div(randstring(3))
+    style!(comp.window, "display" => "inline-block")
+    push!(newdiv, comp.window)
+    [begin
+        style!(co.window, "display" => "inline-block")
+        push!(newdiv, co.window)
+    end for co in cons]
+    newdiv
+end
+
 function vcat(comp::Component{:div}, cons::AbstractContext ...)
     push!(comp, br())
     [begin 
@@ -120,7 +143,6 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layers(con)
 end
 
-
 function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
     second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
@@ -190,8 +212,6 @@ struct GattinoShape{T <: Any} end
 
 shape(comp::Component{<:Any}) = GattinoShape{typeof(comp).parameters[1]}()
 
-reshape(comp::Any, into::Symbol; args ...) = reshape(comp, GattinoShape{into}(); args ...)
-
 reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(shape, GattinoShape{into}(); args ...)
 
 function reshape(con::AbstractContext, layer::String, into::Symbol; args ...)
@@ -241,10 +261,14 @@ function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, key::String, ve
     style!(ecomp[2], key => vec[ecomp[1]])
 end
 
+function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, p::Pair{String, String} ...)
+    style!(ecomp[2], p ...)
+end
+
 function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
     maxval::Number = maximum(vec)
     divisions = length(colors)
-    div_amount = Int64(round(floor(maxval / divisions)))
+    div_amount = floor(maxval / divisions)
     laststep = minimum(vec)
     for color in colors
         if vec[ecomp[1]] in laststep:div_amount

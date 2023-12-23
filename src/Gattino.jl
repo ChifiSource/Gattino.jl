@@ -57,9 +57,11 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
         group!(plotgroup, "$orlabel") do g::Group
             points!(g, x, y, "fill" => colors[1])
         end
+        xmax = maximum(x)
+        ymax = maximum(y)
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
-                points!(g, x, feature[2], "fill" => colors[e])
+                points!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax)
             end
             string(feature[1])::String
         end for (e, feature) in enumerate(features)]
@@ -73,18 +75,17 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
         end
     end
     if legend
-        println(lbls)
-        println(layers(con))
         legend!(con, lbls)
     end
     con::AbstractContext
 end
 
 
+scatter(x::Vector{<:Any}, args ...; keyargs ...) = scatter_plot!(Context(500, 500), x, args ...; keyargs ...)
+
 function scatter(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
-    newfs = filter(k -> ~(contains(k[1], x) || contains(k[1], y)), features)
-    println(keys(newfs))
+    newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
     context(width, height) do con::Context
         scatter_plot!(con, features[x], features[y], pairs(newfs) ...; colors = colors, keyargs ...)
     end
