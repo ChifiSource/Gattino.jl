@@ -1,3 +1,44 @@
+"""
+Created in December, 2023 by
+[chifi - an open source software dynasty.](https://github.com/orgs/ChifiSource)
+- This software is MIT-licensed.
+### Gattino
+`Gattino` is a **hyper-composable** SVG visualization library for Julia built using the `Toolips` 
+web-development framework. Usage centers around the `Context`, which can be created using the `context` method.
+```julia
+mycon = context(200, 200) do con::Context
+
+end
+```
+For more information on creating and editing visualizations, use `?context`
+#### High-level plotting methods
+All high-level plots in `Gattino` share the same methods. We do not need to provide a `Context`, instead these functions 
+create an entire visualization directly from a data structure.
+####### functions
+
+- `scatter` (`?scatter`)
+- `line`
+- `hist`
+
+####### methods
+
+- `(x::Vector{<:Any}, args ...; keyargs ...)` - Two features from Vectors.
+- `(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+height::Int64 = 500, keyargs ...)` -- More than two features from a dictionary.
+- `(features::Any, args ...; keyargs ...)` -- More than two features from `Base`-compliant data structures. (Uses `names`, `eachcol`).
+
+####### key-word arguments
+
+####### crucial information
+All of these dispatches are simply calls which translate data into arguments for these functions' 
+    mutating equivalents. The mutating equivalents are just the functions with `_plot!` after them:
+```julia
+scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
+    divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+
+line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}; divisions::Int64 = 4, title::String = "")
+```
+"""
 module Gattino
 using Toolips
 import Toolips: style!, write!, animate!
@@ -100,7 +141,8 @@ function scatter(features::Any, args ...; keyargs ...)
     scatter(features, args ...; keyargs ...)
 end
 
-function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}; divisions::Int64 = 4, title::String = "")
+function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = 4, xlabel::String = "", 
+    ylabel::String = "", legend::Bool = true, title::String = "", colors::Vector{String} = Vector{String}(["#FF6633"]))
     if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
@@ -124,15 +166,19 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         group!(plotgroup, "grid") do g::Group
             grid!(g, divisions)
         end
-        group!(plotgroup, "line") do g::Group
+        orlabel::String = ylabel
+        if ylabel == ""
+            orlabel = "line"
+        end
+        group!(plotgroup, orlabel) do g::Group
             line!(g, x, y)
         end
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-     #==   group!(plotgroup, "axislabels") do g::Group
+        group!(plotgroup, "axislabels") do g::Group
 
-        end ==#
+        end
     end
     con::AbstractContext
 end
