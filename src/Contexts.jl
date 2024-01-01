@@ -6,12 +6,41 @@ These contexts can be drawn on using the `draw!` method and keep track of
 different elements inside of the Context.
 ##### Consistencies
 - window::Component{<Any}
-- uuid::String
-- dim::Pair{Int64, Int64}
-- margin::Pair{Int64, Int64}
+- dim
+- margin
 """
 abstract type AbstractContext <: Toolips.Modifier end
 
+"""
+####### compositions
+Layouts in `Gattino` can be created using two techniques; scaling and composition. Using scaling 
+will mean that all of the visualizations in our layout are on the same `Context`. Using compositions 
+will mean that our visualizations will sit on seperate contexts beside one another. Scaling is done using 
+margins and dimensions of contexts, whereas compositions are done using `compose`, `vcat`, and `hcat`
+"""
+function compose end
+
+"""
+```julia
+compose(name::String, cons::AbstractContext ...) -> ::Component{:div}
+```
+---
+Composes `cons` into a new `Component{:div}` called `name`. Composing is done 
+using either this method, or `vcat`/`hcat`.
+```example
+using Gattino
+
+firstcon = context(50, 50) do con::Context
+    Gattino.text!(con, 25, 25, "hello", "fill" => "black")
+end
+
+secondcon = context(50, 50) do con::Context
+    Gattino.text!(con, 25, 25, "world", "fill" => "black")
+end
+
+finalvis = compose("myframe", firstcon, secondcon)
+```
+"""
 function compose(name::String, cons::AbstractContext ...)
     newdiv = div(name)
     newdiv[:children] = Vector{Servable}([begin 
@@ -20,6 +49,59 @@ function compose(name::String, cons::AbstractContext ...)
     newdiv::Component{:div}
 end
 
+"""
+```julia
+vcat(comp::AbstractContext, cons::AbstractContext ...) -> ::Component{:div}
+```
+---
+Creates a new `:div` for `comp` and concatenates all provided `cons` vertically.
+```example
+
+```
+"""
+function vcat(comp::AbstractContext, cons::AbstractContext ...)
+    newdiv = div(randstring(3))
+    style!(comp.window, "display" => "inline-block")
+    push!(newdiv, comp.window)
+    push!(newdiv, br())
+    [begin
+        style!(co.window, "display" => "inline-block")
+        push!(newdiv, co.window)
+    end for co in cons]
+    newdiv
+end
+
+"""
+```julia
+hcat(comp::AbstractContext, cons::AbstractContext ...) -> ::Component{:div}
+```
+---
+Creates a new `:div` for `comp` and concatenates all provided `cons` horizontally.
+```example
+
+```
+"""
+function hcat(comp::AbstractContext, cons::AbstractContext ...)
+    newdiv = div(randstring(3))
+    style!(comp.window, "display" => "inline-block")
+    push!(newdiv, comp.window)
+    [begin
+        style!(co.window, "display" => "inline-block")
+        push!(newdiv, co.window)
+    end for co in cons]
+    newdiv
+end
+
+"""
+```julia
+vcat(comp::Component{:div}, cons::AbstractContext ...) -> ::Component{:div}
+```
+---
+Concatenates `cons` to the composition `comp` vertically.
+```example
+
+```
+"""
 function vcat(comp::Component{:div}, cons::AbstractContext ...)
     push!(comp, br())
     [begin 
@@ -29,6 +111,16 @@ function vcat(comp::Component{:div}, cons::AbstractContext ...)
     comp
 end
 
+"""
+```julia
+vcat(comp::Component{:div}, cons::AbstractContext ...) -> ::Component{:div}
+```
+---
+Concatenates `cons` to the composition `comp` horizontally.
+```example
+
+```
+"""
 function hcat(comp::Component{:div}, cons::AbstractContext ...)
     [begin 
     style!(con.window, "display" => "inline-block")
@@ -46,14 +138,22 @@ push!(comp::Component{:div}, cons::AbstractContext ...) = hcat(comp, cons ...)
 - dim::Int64{Int64, Int64}
 - margin::Pair{Int64, Int64}
 
-The `Context` can be used with the `draw!` method in order to create and
-draw SVG layers in with scaling functions.
+The `Context` can be used with `Gattino` methods in order to create and
+draw introspectable SVG layers with scaling functions. This constructor is 
+typically not called directly, instead use the `context` function. `?context` 
+provides a lot more information on contexts and context grouping.
 ##### example
 ```
-using Contexts
+using Gattino
 
+# how you should probably use contexts
+mycontext = context(500, 500) do con::Context
+    Gattino.line!(con, [1, 2, 3], [1, 8, 4], "stroke" => "red", "stroke-width" => 2px)
+end
+
+# you (can) still do this, of course.
 con = Context()
-line!(con, [5, 1, 2], [7, 34, 5], "stroke" => "red", "stroke-width" => "10")
+Gattino.line!(con, [5, 1, 2], [7, 34, 5], "stroke" => "red", "stroke-width" => "10")
 display(con)
 ```
 ------------------
@@ -79,6 +179,12 @@ mutable struct Context <: AbstractContext
 end
 
 write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c, con.window)
+
+"""
+####### contexts
+
+"""
+function context end
 
 function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
     con = Context(width, height, margin)
@@ -119,7 +225,6 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     insert!(con.window[:children], to, layercomp)
     layers(con)
 end
-
 
 function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
     second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
@@ -190,8 +295,6 @@ struct GattinoShape{T <: Any} end
 
 shape(comp::Component{<:Any}) = GattinoShape{typeof(comp).parameters[1]}()
 
-reshape(comp::Any, into::Symbol; args ...) = reshape(comp, GattinoShape{into}(); args ...)
-
 reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(shape, GattinoShape{into}(); args ...)
 
 function reshape(con::AbstractContext, layer::String, into::Symbol; args ...)
@@ -241,10 +344,14 @@ function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, key::String, ve
     style!(ecomp[2], key => vec[ecomp[1]])
 end
 
+function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, p::Pair{String, String} ...)
+    style!(ecomp[2], p ...)
+end
+
 function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
     maxval::Number = maximum(vec)
     divisions = length(colors)
-    div_amount = Int64(round(floor(maxval / divisions)))
+    div_amount = floor(maxval / divisions)
     laststep = minimum(vec)
     for color in colors
         if vec[ecomp[1]] in laststep:div_amount

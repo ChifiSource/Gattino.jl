@@ -323,8 +323,29 @@ function append_legend!(con::AbstractContext, name::String)
     sample_width = 20
     sample_height = 20
     sample_margin = 12
-    set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features - 1))
-    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features - 1) * 1.15),
+    set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
+    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
+    text = name)
+    style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
+    push!(legend, samp, samplabel)
+    nothing
+end
+
+function append_legend!(con::AbstractContext, name::String, samp::Component{<:Any})
+    legend = con["legend"]
+    n_features = length(legend[:children]) - 1
+    box = legend[:children]["legendbg"]
+    positionx, positiony = box[:x], box[:y]
+    box[:height] += 20
+    sample_width = 20
+    sample_height = 20
+    sample_margin = 12
+    if typeof(samp) == Component{:g}
+        [set_position!(cmp, positionx + sample_margin * e, positiony + sample_margin * (n_features)) for (e, cmp) in enumerate(samp[:children])]
+    else
+        set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
+    end
+    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
     push!(legend, samp, samplabel)
@@ -332,5 +353,8 @@ function append_legend!(con::AbstractContext, name::String)
 end
 
 function remove_legend!(con::AbstractContext, name::String)
-
+    legendcs = con["legend"][:children]
+    legendcs["legendbg"][:height] -= 20
+    pos = findfirst(comp -> comp.name == name, legendcs)
+    deleteat!(legendcs, pos); deleteat!(legendcs, pos + 1)
 end
