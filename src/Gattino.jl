@@ -36,7 +36,6 @@ All of these dispatches are simply calls which translate data into arguments for
 scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
     divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
 
-line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}; divisions::Int64 = 4, title::String = "")
 ```
 """
 module Gattino
@@ -50,7 +49,16 @@ using Random: randstring
 
 include("context_plotting.jl")
 
-
+"""
+```julia
+randcolor() -> ::String
+```
+---
+Generates a random color.
+```example
+color = randcolor()
+```
+"""
 function randcolor()
     colors = ["#FF6633", "#FFB399", "#FF33FF", "#FFFF99", "#00B3E6", 
     "#E6B333", "#3366E6", "#999966", "#99FF99", "#B34D4D",
@@ -65,6 +73,17 @@ function randcolor()
     colors[rand(1:length(colors))]::String
 end
 
+"""
+```julia
+scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
+divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+```
+---
+Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
+```example
+color = randcolor()
+```
+"""
 function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
     divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
       if length(x) != length(y)
@@ -95,7 +114,7 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
         if ylabel == ""
             orlabel = "points"
         end
-        group!(plotgroup, "$orlabel") do g::Group
+        group!(plotgroup, orlabel) do g::Group
             points!(g, x, y, "fill" => colors[1])
         end
         xmax = maximum(x)
@@ -121,8 +140,33 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
     con::AbstractContext
 end
 
+"""
+```julia
+scatter -> ::AbstractContext
+```
+---
+`scatter`, `line`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
+from a data structure using a single function call. (returns a `Context`)
+###### scatter methods
+```julia
+(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
+keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
+```
+Plots a scatter plot from two features as Vectors.
+```julia
+(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+    height::Int64 = 500, keyargs ...)
+```
+Plots a scatter plot from more than two features from a Dictionary.
+```julia
+(features::Any, args ...; keyargs ...)
+```
+Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
+"""
+function scatter end
 
-scatter(x::Vector{<:Any}, args ...; keyargs ...) = scatter_plot!(Context(500, 500), x, args ...; keyargs ...)
+scatter(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
+keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
 
 function scatter(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
@@ -176,14 +220,39 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-        group!(plotgroup, "axislabels") do g::Group
-
+        xmax = maximum(x)
+        ymax = maximum(y)
+        lbls = [begin
+            group!(plotgroup, feature[1]) do g::Group
+                line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax)
+            end
+            string(feature[1])::String
+        end for (e, feature) in enumerate(features)]
+        if xlabel != "" || ylabel != ""
+            group!(plotgroup, "axislabels") do g::Group
+                axislabels!(g, xlabel, ylabel)
+            end
         end
+    end
+    if legend
+        legend!(con, lbls)
     end
     con::AbstractContext
 end
 
-function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divisions::Int64 = length(x), title::String = "")
+"""
+```julia
+line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
+divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+```
+---
+Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
+```example
+color = randcolor()
+```
+"""
+function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = length(x), title::String = "", 
+    xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
     if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
@@ -207,15 +276,31 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number};
         group!(plotgroup, "grid") do g::Group
             grid!(g, divisions)
         end
-        group!(plotgroup, "line") do g::Group
+        orlabel::String = ylabel
+        if ylabel == ""
+            orlabel = "line"
+        end
+        group!(plotgroup, orlabel) do g::Group
             line!(g, x, y)
         end
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-#==        group!(plotgroup, "axislabels") do axesgroup::Group
-
-        end ==#
+        ymax = maximum(y)
+        lbls = [begin
+            group!(plotgroup, feature[1]) do g::Group
+                line!(g, x, feature[2], "fill" => colors[e], ymax = ymax)
+            end
+            string(feature[1])::String
+        end for (e, feature) in enumerate(features)]
+        if xlabel != "" || ylabel != ""
+            group!(plotgroup, "axislabels") do g::Group
+                axislabels!(g, xlabel, ylabel)
+            end
+        end
+    end
+    if legend
+        legend!(con, lbls)
     end
     con::AbstractContext
 end
@@ -224,14 +309,53 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}; keyargs ...)
     line_plot!(con, x, [e for e in 1:length(x)], keyargs ...)::AbstractContext
 end
 
+"""
+```julia
+`line` -> ::AbstractContext
+```
+---
+`line`, `scatter`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
+from a data structure using a single function call. (returns a `Context`)
+###### line
+```julia
+(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
+keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
+```
+Plots a scatter plot from two features as Vectors.
+```julia
+(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+    height::Int64 = 500, keyargs ...)
+```
+Plots a scatter plot from more than two features from a Dictionary.
+```julia
+(features::Any, args ...; keyargs ...)
+```
+Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
+"""
+function line end
+
 function line(args ...; keyargs ...)
     context(500, 500) do con::Context
         line_plot!(con, args ...; keyargs ...)
     end
 end
 
-function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divisions::Int64 = length(x), title::String = "")
-    if length(x) != length(y)
+"""
+```julia
+hist!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
+divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+```
+---
+Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
+```example
+color = randcolor()
+```
+"""
+function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(); divisions::Int64 = length(x), title::String = "")
+    hist = false
+    if length(y) == 0
+        hist = true
+    elseif length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
         )
@@ -255,7 +379,11 @@ function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divi
             grid!(g, divisions)
         end
         group!(plotgroup, "bars") do g::Group
-            bars!(g, x, y)
+            if ~(hist)
+                bars!(g, x, y)
+                return
+            end
+            bars!(g, x)
         end
         group!(plotgroup, "labels") do g::Group
             barlabels!(g, x)
@@ -268,6 +396,29 @@ function hist!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}; divi
     con::AbstractContext
 end
 
+"""
+```julia
+hist -> ::AbstractContext
+```
+---
+`scatter`, `line`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
+from a data structure using a single function call. (returns a `Context`)
+###### scatter methods
+```julia
+(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
+keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
+```
+Plots a scatter plot from two features as Vectors.
+```julia
+(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+    height::Int64 = 500, keyargs ...)
+```
+Plots a scatter plot from more than two features from a Dictionary.
+```julia
+(features::Any, args ...; keyargs ...)
+```
+Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
+"""
 hist(x::Vector{<:Any}, args ...; keyargs ...) = hist!(Context(500, 500), x, args ...; keyargs ...)
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
