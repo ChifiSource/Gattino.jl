@@ -148,6 +148,7 @@ scatter -> ::AbstractContext
 `scatter`, `line`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
 from a data structure using a single function call. (returns a `Context`)
 ###### scatter methods
+A scatter plot must always take at least an X or Y, which must both be numeric.
 ```julia
 (x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
 keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
@@ -317,6 +318,7 @@ end
 `line`, `scatter`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
 from a data structure using a single function call. (returns a `Context`)
 ###### line
+A `line` plot is able to support an X feature which is non-numeric.
 ```julia
 (x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
 keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
@@ -331,6 +333,7 @@ Plots a scatter plot from more than two features from a Dictionary.
 (features::Any, args ...; keyargs ...)
 ```
 Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
+---
 """
 function line end
 
@@ -338,6 +341,23 @@ function line(args ...; keyargs ...)
     context(500, 500) do con::Context
         line_plot!(con, args ...; keyargs ...)
     end
+end
+
+function line(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+    height::Int64 = 500, keyargs ...)
+    newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
+    context(width, height) do con::Context
+        line_plot!(con, features[x], features[y], pairs(newfs) ...; colors = colors, keyargs ...)
+    end
+end
+
+function line(features::Any, args ...; keyargs ...)
+    try
+        features = Dict{String, AbstractVector}(string(name) => Vector(col) for (name, col) in zip(names(features), eachcol(features)))
+    catch
+        throw("$(typeof(features)) is not compatible with `Gattino`. (Gattino uses `names` and `eachcol`.)")
+    end
+    line(features, args ...; keyargs ...)
 end
 
 """
@@ -351,7 +371,8 @@ Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of ro
 color = randcolor()
 ```
 """
-function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(); divisions::Int64 = length(x), title::String = "")
+function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(), features::Pair{String, <:AbstractVector} ...; 
+    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
     hist = false
     if length(y) == 0
         hist = true
@@ -401,9 +422,10 @@ end
 hist -> ::AbstractContext
 ```
 ---
-`scatter`, `line`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
+`hist`, `scatter`, and `line` are all high-level plotting functions used to create a `Context` and display features 
 from a data structure using a single function call. (returns a `Context`)
-###### scatter methods
+###### hist methods
+A histogram may be used with a single feature, and when used with multiple features a single (X) feature may be non-numeric.
 ```julia
 (x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
 keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
@@ -419,7 +441,24 @@ Plots a scatter plot from more than two features from a Dictionary.
 ```
 Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
 """
-hist(x::Vector{<:Any}, args ...; keyargs ...) = hist!(Context(500, 500), x, args ...; keyargs ...)
+hist(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, keyargs ...) = hist!(Context(width, height), x, args ...; keyargs ...)
+
+function hist(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+    height::Int64 = 500, keyargs ...)
+    newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
+    context(width, height) do con::Context
+        hist_plot!(con, features[x], features[y], pairs(newfs) ...; colors = colors, keyargs ...)
+    end
+end
+
+function hist(features::Any, args ...; keyargs ...)
+    try
+        features = Dict{String, AbstractVector}(string(name) => Vector(col) for (name, col) in zip(names(features), eachcol(features)))
+    catch
+        throw("$(typeof(features)) is not compatible with `Gattino`. (Gattino uses `names` and `eachcol`.)")
+    end
+    hist(features, args ...; keyargs ...)
+end
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
 export compose, delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!
