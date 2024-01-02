@@ -181,32 +181,128 @@ end
 write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c, con.window)
 
 """
-####### contexts
+##### contexts
+```julia
+context -> ::AbstractContext
+```
+A `Context` is a wrapper for a `Component{:svg}` which can be used with mutating methods to 
+draw scaled shapes onto an SVG window. Contexts are generally created through methods of this 
+function, which typically take a `Function` and dimensions for the `context`.
 
+To adjust the scaling of a `Context` from a `Context`, use `group`.
+- `group`
+
+Gattino mutating methods can be used (`Gattino._`) (`?Gattino.drawing`) , or `Toolips` components may be drawn from a `Vector{Servable}` with 
+`draw!`.
+####### layers
+Contexts have layers, which can be mutated using a mixture `Toolips` syntax, such as 
+`style!`, and `Gattino` layer editing functions. These include...
+- `open_layer!`
+- `delete_layer!`
+- `rename_layer!`
+- `move_layer!`
+- `reshape(con::AbstractContext, layer::String, into::Symbol; args ...)`
+- `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
+- `style!(con::AbstractContext, spairs::Pair{String, String} ...)`
+- `animate!(con::AbstractContext, layer::String, anim::Toolips.Animation)`
+
+New layers may be created using grouping.
+- `group!`
+
+####### methods
 """
 function context end
 
-function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
+"""
+```julia
+context(f::Function, width::Int64 = 500, height::Int64 = 720, margin::Pair{Int64, Int64} = 0 => 0) -> ::Context
+```
+This dispatch of `context` is used to create a 2D `Context`. Margins are provided as a `Pair{Int64, Int64}`, these are the left and top margins 
+respectively. 
+```example
+con = context(500, 500) do con::Context
+    text!(con, 250, 250, "hello world!")
+end
+```
+Using a combination of `group` and `group!`, we can build layers with specified scaling.
+For example, the following `Context` draws a shape starting starting at 250px from the left of this 500x500 frame, still consuming 
+the entire height. For proper scaling, I also made the width 250 less. This will make a scaled window inside of the `Context` that is offset by 
+250px and 250px wide, whereas our window is not offset at all and has a full width of 500px.
+```example
+con = context(500, 500) do con::Context
+    Gattino.text!(con, 250, 250, "hello world!")
+    group(con, 250, 500, 250 => 0) do pointarea
+        Gattino.points!(pointarea, [1, 2, 8, 4, 3, 4], 1, 2, 6, 7, 4, 5)
+    end
+end
+```
+"""
+function context(f::Function, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
     con = Context(width, height, margin)
     f(con)
     con::Context
 end
 
-function merge!(c::AbstractContext, c2::AbstractContext)
-    c.window[:children] = vcat(c.window[:children], c2.window[:children])
-end
+"""
+```julia
+context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1) -> ::Context
+```
+This `context` method is used to create a new `Context` of a different size using the window of a different `Context`.
+```example
 
+```
+"""
 function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
-    con = Context(con.windowwidth. height, margin)
+    con = Context(con.window, width, height, margin)
     f(con)
     con::Context
 end
 
+layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
+
+function draw!(c::AbstractContext, comps::Vector{<:Servable})
+    current_len::Int64 = length(c.window[:children])
+    comp_len::Int64 = length(comps)
+    c.window[:children] = Vector{Servable}(vcat(c.window[:children], comps))
+    nothing
+end
+
+"""
+```julia
+merge!(c::AbstractContext, c2::AbstractContext) -> ::Nothing
+```
+
+```example
+
+```
+"""
+function merge!(c::AbstractContext, c2::AbstractContext)
+    c.window[:children] = vcat(c.window[:children], c2.window[:children])
+end
+
+"""
+```julia
+open_layer!(f::Function, con::AbstractContext, layer::String) -> ::Nothing
+```
+
+```example
+
+```
+"""
 function open_layer!(f::Function, con::AbstractContext, layer::String)
     [f(e => comp) for (e, comp) in enumerate(con[layer][:children])]
     nothing
 end
 
+"""
+```julia
+delete_layer!(con::Context, layer::String) -> ::Nothing
+```
+
+```example
+
+```
+"""
 function delete_layer!(con::Context, layer::String)
     layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
     deleteat!(con.window[:children], layerpos)
@@ -245,6 +341,10 @@ function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::P
     style!(t, styles ...)
     draw!(con, [t])
 end
+
+"""
+"""
+const context_shapes = nothing
 
 function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int64, points::Int64 = 5, 
     outer_radius::Int64 = 100, inner_radius::Int64 = 200, angle::Number = pi / points, args ...)
@@ -371,15 +471,6 @@ function show(io::Base.TTY, con::AbstractContext)
 end
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
-
-layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
-
-function draw!(c::AbstractContext, comps::Vector{<:Servable})
-    current_len::Int64 = length(c.window[:children])
-    comp_len::Int64 = length(comps)
-    c.window[:children] = Vector{Servable}(vcat(c.window[:children], comps))
-    nothing
-end
 
 function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
     [style!(c, spairs ...) for c in con.window[:children][s][:children]]

@@ -1,5 +1,9 @@
 include("Contexts.jl")
 
+"""
+"""
+const context_plotting = nothing
+
 function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
         styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
     if length(styles) == 0
