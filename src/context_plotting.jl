@@ -1,11 +1,52 @@
 include("Contexts.jl")
 
 """
+#### context plotting
+Context plotting provides a number of scaled `Toolips.Component` drawing functions targeted at data 
+visualization.
+###### plot elements
+```julia
+grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} ...)
+
+gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+
+gridlabels!(con::AbstractContext, y::Vector{<:Number}, n::Int64 = 4, styles::Pair{String, String} ...)
+
+gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+
+gridlabels!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+
+axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
+
+barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
+
+v_barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
+
+axislabels!(con::AbstractContext, xlabel::AbstractString, ylabel::AbstractString,
+    styles::Pair{String, <:Any}...)
+
+legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right")
+```
+###### feature visualizations
+```julia
+
+points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
+    xmin::Number = minimum(x), ymin::Number = minimum(y), r::Int64 = 5)
+
+```
+###### editing functions
+- `append_legend!(con::AbstractContext, name::String)`
+- `append_legend!(con::AbstractContext, name::String, samp::Component{<:Any})`
+- `remove_legend!(con::AbstractContext, name::String)`
 """
 const context_plotting = nothing
 
 function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
-        styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
+        styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
@@ -29,9 +70,9 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     draw!(con, [line_comp])
 end
 
-function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
+function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, args ...,
     styles::Pair{String, <:Any} ...)
-    line!(con, [string(d) for d in x], y, styles ...)
+    line!(con, [string(d) for d in x], y, args ..., styles ...)
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
@@ -167,12 +208,13 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
 end
 
 function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), r::Int64 = 5)
+    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
+    xmin::Number = minimum(x), ymin::Number = minimum(y), r::Int64 = 5)
    if length(styles) == 0
        styles = ("fill" => "orange", "stroke" => "lightblue", "stroke-width" => "0")
    end
-   percvec_x::Vector{<:Number} = map(n::Number -> (n - minimum(x)) / (maximum(x) - minimum(x)), x)
-   percvec_y::Vector{<:Number} = map(n::Number -> (n - minimum(y)) / (maximum(y) - minimum(y)), y)
+   percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x)
+   percvec_y::Vector{<:Number} = map(n::Number -> (n - ymin) / (ymax - ymin), y)
    draw!(con, Vector{Servable}([begin
        cx = Int64(round(percvec_x[i] * (con.dim[1] - 1) + con.margin[1]))
        cy = Int64(round(con.dim[2] - percvec_y[i] * (con.dim[2] - 1) + con.margin[2]))

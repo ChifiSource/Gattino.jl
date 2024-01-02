@@ -7,7 +7,8 @@ Created in December, 2023 by
 web-development framework. Usage centers around the `Context`, which can be created using the `context` method.
 ```julia
 mycon = context(200, 200) do con::Context
-
+    text!(con, 250, 250, "hello world!")
+    points!(con, [1, 2, 3, 4], [1, 2, 3, 4])
 end
 ```
 For more information on creating and editing visualizations, use `?context`
@@ -15,20 +16,15 @@ For more information on creating and editing visualizations, use `?context`
 All high-level plots in `Gattino` share the same methods. We do not need to provide a `Context`, instead these functions 
 create an entire visualization directly from a data structure.
 ####### functions
-
-- `scatter` (`?scatter`)
+- `scatter`
 - `line`
 - `hist`
-
 ####### methods
 
 - `(x::Vector{<:Any}, args ...; keyargs ...)` - Two features from Vectors.
 - `(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
 height::Int64 = 500, keyargs ...)` -- More than two features from a dictionary.
 - `(features::Any, args ...; keyargs ...)` -- More than two features from `Base`-compliant data structures. (Uses `names`, `eachcol`).
-
-####### key-word arguments
-
 ####### crucial information
 All of these dispatches are simply calls which translate data into arguments for these functions' 
     mutating equivalents. The mutating equivalents are just the functions with `_plot!` after them:
