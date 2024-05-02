@@ -5,8 +5,4 @@ version = "0.1.0"
 
 [deps]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Toolips = "a47e2ad8-fcf7-417c-9746-32b9bdf220bd"
-ToolipsDefaults = "1710be6b-e895-498d-ba35-e3ff0dac7995"
-ToolipsMarkdown = "33f7ff50-f2f2-41f0-8a96-482dce5c1514"
 ToolipsSVG = "8ae86ec9-919d-4ece-9a6d-09b7d28dae11"
-ToolipsSession = "2fe55384-55bc-4df3-9d59-c817d405cd05"

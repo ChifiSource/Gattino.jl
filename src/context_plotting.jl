@@ -70,9 +70,9 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     draw!(con, [line_comp])
 end
 
-function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, args ...,
+function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
     styles::Pair{String, <:Any} ...)
-    line!(con, [string(d) for d in x], y, args ..., styles ...)
+    line!(con, [string(d) for d in x], y, styles ...)
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
