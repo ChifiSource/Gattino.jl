@@ -413,7 +413,10 @@ open_layer!(f::Function, con::AbstractContext, layer::String) -> ::Nothing
 ```
 """
 function open_layer!(f::Function, con::AbstractContext, layer::String)
-    [f(e => comp) for (e, comp) in enumerate(con[layer][:children])]
+    [begin
+        f(e => comp)
+        con[layer][:children][e] = comp 
+    end for (e, comp) in enumerate(con[layer][:children])]
     nothing
 end
 

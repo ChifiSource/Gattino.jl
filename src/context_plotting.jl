@@ -140,7 +140,7 @@ end
 unique_strings = unique(x)
 mx = con.margin[1]
 my = con.margin[2]
-x_min, x_max = minimum(y), maximum(y)
+y_min, y_max = minimum(y), maximum(y)
 division_amountx::Int64 = round((con.dim[1]) / n)
 division_amounty::Int64 = round((con.dim[2]) / n)
 x_offset = Int64(round(division_amountx * 0.75))
@@ -161,7 +161,7 @@ cy = y_max
     cx += xstep
     cy -= ystep
     end for (xcoord, ycoord) in zip(
-    range(x_min, con.dim[1], step=division_amountx),
+    range(0, con.dim[1], step=division_amountx),
     range(y_min, con.dim[2], step=division_amounty))]
 end
 
@@ -234,15 +234,14 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
      con.margin[1] => con.dim[2] + con.margin[2], styles ...)
 end
 
-function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
+function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
+    ymin::Number = minimum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
     n_features::Int64 = length(x)
-    ymax::Number = maximum(y)
     n = 0
-    y_min, y_max = minimum(y), maximum(y)
-    percvec_y = map(n::Number -> (n - y_min) / (y_max - y_min), y)
+    percvec_y = map(n::Number -> (n - ymin) / (ymax - ymin), y)
     block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))

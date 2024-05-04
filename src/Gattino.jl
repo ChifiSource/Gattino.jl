@@ -73,13 +73,16 @@ scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, fe
 divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
 ```
 ---
-Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
+Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels. `features` is optional, and 
+will be the labels alongside the 1-dimensional features to plot. `title`, `xlabel`, and `ylabel` will generate these features on the plot. `legend` being set 
+to `true` will generate a legend if there are `features` beyond `x` and `y`.
 ```example
-color = randcolor()
+
 ```
 """
 function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
-    divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+    divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = vcat(["#FF6633"], [randcolor() for f in features]), 
+    xmax::Number = maximum(x), xmin::Number = minimum(x), ymin::Number = minimum(y))
       if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
@@ -115,7 +118,7 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
         ymax = maximum(y)
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
-                points!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax)
+                points!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
             end
             string(feature[1])::String
         end for (e, feature) in enumerate(features)]
@@ -140,44 +143,67 @@ scatter -> ::AbstractContext
 ```
 ---
 `scatter`, `line`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
-from a data structure using a single function call. (returns a `Context`)
-###### scatter methods
-A scatter plot must always take at least an X or Y, which must both be numeric.
-```julia
-(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
-keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
+from a data structure using a single function call. These all create a new context and call their respective `_plot!` function. 
+    For example, `scatter` will call `scatter_plot!` -- these functions may also be used to mutate your own scatter plot.
+```example
+using DataFrames
+using Gattino
+
+df = DataFrame("A" => [rand(1:1000) for x in 1:1000], "B" => [rand(5:20) for y in 1:1000], "C" => [rand(1:1000) for y in 1:1000], 
+"D" => [rand(4:800) for y in 1:1000])
+plot1 = scatter(df)
+plot2 = scatter([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], title = "straight line", width = 200, height = 200)
+                   # x   y
+plot3 = scatter(df, "C", "D", xlabel = "C", ylabel = "D")
+plot4 = context(250, 250) do con::Context
+    group(con, 100, 250, 0 => 0) do lastvis::Group
+        group!(lastvis, "scatter1") do g::Group
+            Gattino.scatter_plot!(g, [1, 2, 3], [1, 2, 3])
+        end
+    end
+    group(con, 100, 250, 125 => 0) do lastvis::Group
+        group!(lastvis, "hist1") do g::Group
+            Gattino.hist_plot!(g, ["one", "two", "three", "four", "five"], [2, 7, 5, 5, 3])
+        end
+    end
+end
+result = vcat(hcat(plot1, plot2), hcat(plot3, plot4))
 ```
-Plots a scatter plot from two features as Vectors.
+###### methods
 ```julia
-(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+# arguments are passed through to `scatter_plot!`, all of these key-word arguments can be used with `scatter`:
+scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
+    divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), 
+    xmax::Number = maximum(x), xmin::Number = minimum(x), ymin::Number = minimum(y))
+
+scatter(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, keyargs ...)
+scatter(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
+scatter(features::Any, args ...; keyargs ...)
+scatter(features::Any, x::Any = keys(features)[1], y::Any = keys(features)[2], args ...; keyargs ...)
 ```
-Plots a scatter plot from more than two features from a Dictionary.
-```julia
-(features::Any, args ...; keyargs ...)
-```
-Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
 """
 function scatter end
 
 scatter(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
 keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
 
-function scatter(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
-    height::Int64 = 500, keyargs ...)
+function scatter(x::String, y::String, features::Dict{<:AbstractString, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)];
+    width::Int64 = 500, height::Int64 = 500, keyargs ...)
     newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
     context(width, height) do con::Context
         scatter_plot!(con, features[x], features[y], pairs(newfs) ...; colors = colors, keyargs ...)
     end
 end
 
-function scatter(features::Any, args ...; keyargs ...)
+function scatter(features::Any, x::Any = names(features)[1], y::Any = names(features)[2], 
+    args ...; keyargs ...)
     try
         features = Dict{String, AbstractVector}(string(name) => Vector(col) for (name, col) in zip(names(features), eachcol(features)))
     catch
         throw("$(typeof(features)) is not compatible with `Gattino`. (Gattino uses `names` and `eachcol`.)")
     end
-    scatter(features, args ...; keyargs ...)
+    scatter(x, y, features, args ...; keyargs ...)
 end
 
 function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = 4, xlabel::String = "", 
@@ -356,7 +382,7 @@ end
 
 """
 ```julia
-hist!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
+hist_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
 divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
 ```
 ---
@@ -366,10 +392,11 @@ color = randcolor()
 ```
 """
 function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(), features::Pair{String, <:AbstractVector} ...; 
-    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
-    hist = false
+    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), 
+    ymin::Number = minimum(y), ymax::Number = maximum(y))
+    frequency::Bool = false
     if length(y) == 0
-        hist = true
+        frequency = true
     elseif length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
@@ -394,8 +421,8 @@ function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} 
             grid!(g, divisions)
         end
         group!(plotgroup, "bars") do g::Group
-            if ~(hist)
-                bars!(g, x, y)
+            if ~(frequency)
+                bars!(g, x, y, ymin = ymin, ymax = ymax)
                 return
             end
             bars!(g, x)
