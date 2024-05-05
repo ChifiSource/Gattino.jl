@@ -37,7 +37,7 @@ scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, fe
 module Gattino
 using ToolipsSVG
 import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape, string
-import ToolipsSVG: position, set_position!, set_size!, style!, set_shape
+import ToolipsSVG: position, set_position!, set_size!, style!, set_shape, SVGShape
 import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent
 using Random: randstring
 
@@ -224,6 +224,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
         ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
     end
+    lbls::Vector{String} = Vector{String}()
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group
             axes!(g)
@@ -243,12 +244,6 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         end
         xmax = maximum(x)
         ymax = maximum(y)
-        lbls = [begin
-            group!(plotgroup, feature[1]) do g::Group
-                line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax)
-            end
-            string(feature[1])::String
-        end for (e, feature) in enumerate(features)]
         if xlabel != "" || ylabel != ""
             group!(plotgroup, "axislabels") do g::Group
                 axislabels!(g, xlabel, ylabel)
@@ -256,6 +251,12 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         end
     end
     if legend
+        lbls = [begin
+        group!(plotgroup, feature[1]) do g::Group
+            line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax)
+        end
+        string(feature[1])::String
+    end for (e, feature) in enumerate(features)]
         legend!(con, lbls)
     end
     con::AbstractContext
@@ -357,13 +358,13 @@ Plots a scatter plot from any compatible julia data structure (uses `names` and 
 """
 function line end
 
-function line(args ...; keyargs ...)
+function line(x::Vector{<:Any}, y::Vector{<:Any}, args ...; keyargs ...)
     context(500, 500) do con::Context
-        line_plot!(con, args ...; keyargs ...)
+        line_plot!(con, x, y, args ...; keyargs ...)
     end
 end
 
-function line(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+function line(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
     newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
     context(width, height) do con::Context
@@ -371,13 +372,13 @@ function line(features::Dict{String, <:AbstractVector}, x::String, y::String, co
     end
 end
 
-function line(features::Any, args ...; keyargs ...)
+function line(features::Any, x::Any = names(features)[1], y::Any = names(features)[2], args ...; keyargs ...)
     try
         features = Dict{String, AbstractVector}(string(name) => Vector(col) for (name, col) in zip(names(features), eachcol(features)))
     catch
         throw("$(typeof(features)) is not compatible with `Gattino`. (Gattino uses `names` and `eachcol`.)")
     end
-    line(features, args ...; keyargs ...)
+    line(x, y, features, args ...; keyargs ...)
 end
 
 """

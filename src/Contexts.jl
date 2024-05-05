@@ -322,8 +322,13 @@ end
 
 
 function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
-    [style!(c, spairs ...) for c in con.window[:children][s][:children]]
-    nothing
+    layer = con.window[:children][s]
+    if length(layer[:children]) > 0
+        [style!(c, spairs ...) for c in layer[:children]]
+        return(nothing)
+    end
+    style!(layer, spairs ...)
+    nothing::Nothing
 end
 
 function style!(con::AbstractContext, spairs::Pair{String, String} ...)
@@ -442,7 +447,7 @@ end
 
 function set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...)
     shape = SVGShape{into}
-    con.window[:children][layer][:children] = [set_shape!(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
+    con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
 end
 
 function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
