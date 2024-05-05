@@ -319,8 +319,6 @@ function group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[
     draw!(c, Vector{Servable}([gr.window]))
 end
 
-
-
 function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
     layer = con.window[:children][s]
     if length(layer[:children]) > 0
@@ -345,6 +343,7 @@ function animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.Key
         push!(con.window.extras, style, animation)
     end
 end
+
 """
 ```julia
 merge!(c::AbstractContext, c2::AbstractContext) -> ::Nothing
@@ -406,8 +405,6 @@ function move_layer!(con::AbstractContext, layer::String, to::Int64)
     layers(con)
 end
 
-function open_layer! end
-
 """
 ```julia
 open_layer!(f::Function, con::AbstractContext, layer::String) -> ::Nothing
@@ -422,14 +419,54 @@ function open_layer!(f::Function, con::AbstractContext, layer::String)
         f(e => comp)
         con[layer][:children][e] = comp 
     end for (e, comp) in enumerate(con[layer][:children])]
-    nothing
+    nothing::Nothing
 end
+
+"""
+```julia
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, args ...; keyargs ...)
+```
+`set!` is used in tandem with `open_layer!` to set the properties of elements -- usually according
+to data.
+```julia
+# sets every component's property statically:
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, value::Any)
+# scales the value based on `vec`, using `max` for values that are `100`-percent of the maximum of `vec`.
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
+# sets value to 
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:AbstractString})
+```
+The same dispatches are also available for `style!`.
+- See also: `style!`, `set_gradient!`, `open_layer!`, `set_shape!`, `Context`
+```example
+
+```
+"""
+function set! end
 
 set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
 
 function set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
     maxval::Number = maximum(vec)
     ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
+end
+
+function set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:AbstractString})
+    ecomp[2][prop] = vec[ecomp[1]]
+end
+
+function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
+    maxval::Number = maximum(vec)
+    divisions = length(colors)
+    div_amount = floor(maxval / divisions)
+    laststep = minimum(vec)
+    for color in colors
+        if vec[ecomp[1]] in laststep:div_amount
+            style!(ecomp[2], "fill" => color)
+            break
+        end
+        laststep, div_amount = div_amount, div_amount + div_amount
+    end
 end
 
 function style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
@@ -447,34 +484,6 @@ end
 
 function set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...)
     shape = SVGShape{into}
-    con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
-end
-
-function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
-    maxval::Number = maximum(vec)
-    divisions = length(colors)
-    div_amount = floor(maxval / divisions)
-    laststep = minimum(vec)
-    for color in colors
-        if vec[ecomp[1]] in laststep:div_amount
-            style!(ecomp[2], "fill" => color)
-            break
-        end
-        laststep, div_amount = div_amount, div_amount + div_amount
-    end
-end
-
-function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 = 0, 
-    sides::Int64 = 3, r::Int64 = 100, angle::Number = 2 * pi / sides, args ...)
-    points = shape_points(x, y, r, sides, angle)
-    comp = Component(name, "shape", "points" => "'$points'", p ..., args ...)
-    comp.tag = "polygon"
-    push!(comp.properties, :x => x, :y => y, :r => r, :sides => sides, :angle => angle)
-    comp::Component{:shape}
-end
-
-function set_shape(con::AbstractContext, layer::String, into::Symbol; args ...)
-    shape = SVGShape{into}()
     con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
 end
 

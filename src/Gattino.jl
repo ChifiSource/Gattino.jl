@@ -4,34 +4,33 @@ Created in December, 2023 by
 - This software is MIT-licensed.
 ### Gattino
 `Gattino` is a **hyper-composable** SVG visualization library for Julia built using the `Toolips` 
-web-development framework. Usage centers around the `Context`, which can be created using the `context` method.
+web-development framework's HTML templating (`ToolipsSVG`). Usage centers around the `Context`, 
+which is provided to translate data into Scalable Vector Graphics and scale it onto a window. A 
+`Context` is usually created via the `context` function:
 ```julia
 mycon = context(200, 200) do con::Context
     text!(con, 250, 250, "hello world!")
     points!(con, [1, 2, 3, 4], [1, 2, 3, 4])
 end
 ```
-For more information on creating and editing visualizations, use `?context`
-#### High-level plotting methods
-All high-level plots in `Gattino` share the same methods. We do not need to provide a `Context`, instead these functions 
-create an entire visualization directly from a data structure.
-####### functions
-- `scatter`
-- `line`
-- `hist`
-####### methods
-
-- `(x::Vector{<:Any}, args ...; keyargs ...)` - Two features from Vectors.
-- `(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
-height::Int64 = 500, keyargs ...)` -- More than two features from a dictionary.
-- `(features::Any, args ...; keyargs ...)` -- More than two features from `Base`-compliant data structures. (Uses `names`, `eachcol`).
-####### crucial information
-All of these dispatches are simply calls which translate data into arguments for these functions' 
-    mutating equivalents. The mutating equivalents are just the functions with `_plot!` after them:
+`Gattino`
+- For more information on creating and editing visualizations, use `?context`.
+###### export list
+- **visualizations**
 ```julia
-scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
-    divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
-
+# plot   | context plotting equivalent
+scatter #| scatter_plot!
+line    #| line_plot!
+hist    #| hist_plot!
+```
+- **contexts**
+```julia
+```
+- **context plotting**
+```julia
+```
+- **context drawing**
+```julia
 ```
 """
 module Gattino
@@ -74,8 +73,13 @@ divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = 
 ```
 ---
 Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels. `features` is optional, and 
-will be the labels alongside the 1-dimensional features to plot. `title`, `xlabel`, and `ylabel` will generate these features on the plot. `legend` being set 
-to `true` will generate a legend if there are `features` beyond `x` and `y`.
+will be the labels alongside the 1-dimensional features to plot in `Pair{String, Vector}` form. 
+`title`, `xlabel`, and `ylabel` will generate these features on the plot. `legend` being set 
+to `true` will generate a legend -- but only if there are `features` beyond `x` and `y`.... 
+The idea being that `xlabel`/`ylabel` would be used in place of the legend in those cases.
+
+All of the key-word arguments for `scatter_plot!` are also key-word arguments for `scatter`, as well as 
+other plotting functions.
 ```example
 
 ```
@@ -144,7 +148,10 @@ scatter -> ::AbstractContext
 ---
 `scatter`, `line`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
 from a data structure using a single function call. These all create a new context and call their respective `_plot!` function. 
-    For example, `scatter` will call `scatter_plot!` -- these functions may also be used to mutate your own scatter plot.
+    For example, `scatter` will call `scatter_plot!` -- these functions may also be used to add plots to existing contexts. 
+    The arguments for the `_plot!` equivalents are passed down from their plot creation functions. As a result, each dispatch 
+    of `scatter` is a pass-through to the main dispatch of `scatter_plot!`, and arguments for that `Function` may be used.
+- For a `scatter` plot, both `x` and `y` must be numerical.
 ```example
 using DataFrames
 using Gattino
@@ -176,11 +183,15 @@ scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, fe
     divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), 
     xmax::Number = maximum(x), xmin::Number = minimum(x), ymin::Number = minimum(y))
 
-scatter(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, keyargs ...)
-scatter(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
-    height::Int64 = 500, keyargs ...)
-scatter(features::Any, args ...; keyargs ...)
-scatter(features::Any, x::Any = keys(features)[1], y::Any = keys(features)[2], args ...; keyargs ...)
+# for vectors
+scatter(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
+    keyargs ...)
+# for dictionaries (secondary for data structures)
+scatter(x::String, y::String, features::Dict{<:AbstractString, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)];
+    width::Int64 = 500, height::Int64 = 500, keyargs ...)
+# for data structures (binded to `names` and `eachcol`)
+scatter(features::Any, x::Any = names(features)[1], y::Any = names(features)[2], 
+    args ...; keyargs ...)
 ```
 """
 function scatter end
@@ -206,6 +217,25 @@ function scatter(features::Any, x::Any = names(features)[1], y::Any = names(feat
     scatter(x, y, features, args ...; keyargs ...)
 end
 
+"""
+```julia
+line_plot!(con::AbstractContext, ...) -> ::Context
+```
+---
+Mutates `con` by drawing a line plot onto it. `divisions` is the number of rows and columns for the grid and its labels. `features` is optional, and 
+will be the labels alongside the 1-dimensional features to plot in `Pair{String, Vector}` form. 
+`title`, `xlabel`, and `ylabel` will generate these features on the plot. `legend` being set 
+to `true` will generate a legend -- but only if there are `features` beyond `x` and `y`.
+- For a `line` plot, the `y` must be numerical -- the `x` can be non-numerical.
+```julia
+line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = 4, xlabel::String = "", 
+    ylabel::String = "", legend::Bool = true, title::String = "", colors::Vector{String} = Vector{String}(["#FF6633"]))
+
+# non-numerical x
+line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = length(x), title::String = "", 
+    xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+```
+"""
 function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = 4, xlabel::String = "", 
     ylabel::String = "", legend::Bool = true, title::String = "", colors::Vector{String} = Vector{String}(["#FF6633"]))
     if length(x) != length(y)
@@ -262,17 +292,6 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
     con::AbstractContext
 end
 
-"""
-```julia
-line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
-divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
-```
----
-Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
-```example
-color = randcolor()
-```
-"""
 function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = length(x), title::String = "", 
     xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
     if length(x) != length(y)
@@ -335,26 +354,14 @@ end
 ```julia
 `line` -> ::AbstractContext
 ```
----
 `line`, `scatter`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
 from a data structure using a single function call. (returns a `Context`)
-###### line
-A `line` plot is able to support an X feature which is non-numeric.
 ```julia
-(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
-keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
-```
-Plots a scatter plot from two features as Vectors.
-```julia
-(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+line(x::Vector{<:Any}, y::Vector{<:Any}, args ...; keyargs ...)
+line(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
+line(features::Any, x::Any = names(features)[1], y::Any = names(features)[2], args ...; keyargs ...)
 ```
-Plots a scatter plot from more than two features from a Dictionary.
-```julia
-(features::Any, args ...; keyargs ...)
-```
-Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
----
 """
 function line end
 
@@ -383,10 +390,10 @@ end
 
 """
 ```julia
-hist_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
-divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(), features::Pair{String, <:AbstractVector} ...; 
+    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), 
+    ymin::Number = minimum(y), ymax::Number = maximum(y))
 ```
----
 Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
 ```example
 color = randcolor()
@@ -443,25 +450,7 @@ end
 ```julia
 hist -> ::AbstractContext
 ```
----
-`hist`, `scatter`, and `line` are all high-level plotting functions used to create a `Context` and display features 
-from a data structure using a single function call. (returns a `Context`)
-###### hist methods
-A histogram may be used with a single feature, and when used with multiple features a single (X) feature may be non-numeric.
-```julia
-(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, 
-keyargs ...) = scatter_plot!(Context(width, height), x, args ...; keyargs ...)
-```
-Plots a scatter plot from two features as Vectors.
-```julia
-(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
-    height::Int64 = 500, keyargs ...)
-```
-Plots a scatter plot from more than two features from a Dictionary.
-```julia
-(features::Any, args ...; keyargs ...)
-```
-Plots a scatter plot from any compatible julia data structure (uses `names` and `eachcol`)
+
 """
 hist(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, keyargs ...) = hist_plot!(Context(width, height), x, args ...; keyargs ...)
 
