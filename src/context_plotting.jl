@@ -88,7 +88,8 @@ function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
 end
 
 function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-    styles::Pair{String, <:Any} ...)
+    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
+    ymin::Number = minimum(y), xmin::Number = minimum(x))
 if length(styles) == 0
     styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
 end

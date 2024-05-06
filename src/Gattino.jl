@@ -37,7 +37,7 @@ module Gattino
 using ToolipsSVG
 import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape, string
 import ToolipsSVG: position, set_position!, set_size!, style!, set_shape, SVGShape
-import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent
+import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br
 using Random: randstring
 
 include("context_plotting.jl")
@@ -86,7 +86,7 @@ other plotting functions.
 """
 function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
     divisions::Int64 = 4, title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = vcat(["#FF6633"], [randcolor() for f in features]), 
-    xmax::Number = maximum(x), xmin::Number = minimum(x), ymin::Number = minimum(y))
+    xmax::Number = maximum(x), xmin::Number = minimum(x), ymin::Number = minimum(y), ymax::Number = maximum(y))
       if length(x) != length(y)
         throw(
             DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
@@ -118,8 +118,6 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
         group!(plotgroup, orlabel) do g::Group
             points!(g, x, y, "fill" => colors[1])
         end
-        xmax = maximum(x)
-        ymax = maximum(y)
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
                 points!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
@@ -237,11 +235,10 @@ line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features
 ```
 """
 function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = 4, xlabel::String = "", 
-    ylabel::String = "", legend::Bool = true, title::String = "", colors::Vector{String} = Vector{String}(["#FF6633"]))
+    ylabel::String = "", legend::Bool = true, title::String = "", colors::Vector{String} = Vector{String}(["#FF6633"]), ymin::Number = minimum(y), ymax::Number = maximum(y), 
+    xmin::Number = minimum(x), xmax::Number = maximum(x))
     if length(x) != length(y)
-        throw(
-            DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
-        )
+        throw(DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))"))
     end
     w::Int64, h::Int64 = con.dim[1], con.dim[2]
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
@@ -272,8 +269,12 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions)
         end
-        xmax = maximum(x)
-        ymax = maximum(y)
+        lbls = [begin
+            group!(plotgroup, feature[1]) do g::Group
+                line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
+            end
+            string(feature[1])::String
+        end for (e, feature) in enumerate(features)]
         if xlabel != "" || ylabel != ""
             group!(plotgroup, "axislabels") do g::Group
                 axislabels!(g, xlabel, ylabel)
@@ -281,23 +282,15 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         end
     end
     if legend
-        lbls = [begin
-        group!(plotgroup, feature[1]) do g::Group
-            line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax)
-        end
-        string(feature[1])::String
-    end for (e, feature) in enumerate(features)]
         legend!(con, lbls)
     end
     con::AbstractContext
 end
 
 function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = length(x), title::String = "", 
-    xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]))
+    xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), ymin::Number = minimum(y), ymax = maximum(y))
     if length(x) != length(y)
-        throw(
-            DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
-        )
+        throw(DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))"))
     end
     w::Int64, h::Int64 = con.dim[1], con.dim[2]
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
@@ -330,7 +323,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
         ymax = maximum(y)
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
-                line!(g, x, feature[2], "fill" => colors[e], ymax = ymax)
+                line!(g, x, feature[2], "fill" => colors[e], ymax = ymax, ymin = ymin)
             end
             string(feature[1])::String
         end for (e, feature) in enumerate(features)]
@@ -376,7 +369,7 @@ function line(x::Vector{<:Any}, y::Vector{<:Any}, args ...; keyargs ...)
     end
 end
 
-function line(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+function line(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features) + 1]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
     newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
     context(width, height) do con::Context
@@ -481,7 +474,7 @@ In reference to this function, we should also note context_plotting's `vbars!`
 """
 hist(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, keyargs ...) = hist_plot!(Context(width, height), x, args ...; keyargs ...)
 
-function hist(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+function hist(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for co in features[x]]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
     newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
     context(width, height) do con::Context
