@@ -1,6 +1,13 @@
-
+#== Contexts.jl
+- abstract contexts
+- compositions
+- base contexts
+- layers and grouping
+- open layer
+- context drawing
+==#
 """
-### abstract type AbstractContext <: Toolips.Modifier
+### abstract type AbstractContext <: ToolipsSVG.ToolipsServables.Modifier
 AbstractContexts are `Modifiers` that can be used to draw inside of a given frame.
 These contexts can be drawn on using the `draw!` method and keep track of
 different elements inside of the Context.
@@ -9,7 +16,7 @@ different elements inside of the Context.
 - dim
 - margin
 """
-abstract type AbstractContext <: Toolips.Modifier end
+abstract type AbstractContext <: ToolipsSVG.ToolipsServables.Modifier end
 
 """
 ####### compositions
@@ -178,222 +185,111 @@ mutable struct Context <: AbstractContext
     end
 end
 
-write!(c::Toolips.AbstractConnection, con::AbstractContext) = write!(c, con.window)
+string(con::AbstractContext) = string(con.window)
 
 """
-####### contexts
+##### contexts
+```julia
+context -> ::AbstractContext
+```
+A `Context` is a wrapper for a `Component{:svg}` which can be used with mutating methods to 
+draw scaled shapes onto an SVG window. Contexts are generally created through methods of this 
+function, which typically take a `Function` and dimensions for the `context`.
 
+To adjust the scaling of a `Context` from a `Context`, use `group`.
+- `group`
+
+Gattino mutating methods (`Gattino._`) may be used from context components or context plotting, 
+(`?Gattino.context_components`, `?Gattino.context_plotting`) , or `Toolips` components may be drawn from a `Vector{Servable}` with 
+`draw!`.
+- `draw!`
+- `Gattino.context_components`
+- `Gattino.context_plotting`
+####### layers
+Contexts have layers, which can be mutated using a mixture `Toolips` syntax, such as 
+`style!`, and `Gattino` layer editing functions. These include...
+- `open_layer!`
+- `delete_layer!`
+- `rename_layer!`
+- `move_layer!`
+- `reshape(con::AbstractContext, layer::String, into::Symbol; args ...)`
+- `style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)`
+- `style!(con::AbstractContext, spairs::Pair{String, String} ...)`
+- `animate!(con::AbstractContext, layer::String, anim::ToolipsSVG.ToolipsServables.Animation)`
+
+New layers may be created using grouping.
+- `group!`
+
+####### methods
 """
 function context end
 
-function context(f::Function, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
+"""
+```julia
+context(f::Function, width::Int64 = 500, height::Int64 = 720, margin::Pair{Int64, Int64} = 0 => 0) -> ::Context
+```
+This dispatch of `context` is used to create a 2D `Context`. Margins are provided as a `Pair{Int64, Int64}`, these are the left and top margins 
+respectively. 
+```example
+con = context(500, 500) do con::Context
+    text!(con, 250, 250, "hello world!")
+end
+```
+Using a combination of `group` and `group!`, we can build layers with specified scaling.
+For example, the following `Context` draws a shape starting starting at 250px from the left of this 500x500 frame, still consuming 
+the entire height. For proper scaling, I also made the width 250 less. This will make a scaled window inside of the `Context` that is offset by 
+250px and 250px wide, whereas our window is not offset at all and has a full width of 500px.
+```example
+con = context(500, 500) do con::Context
+    Gattino.text!(con, 250, 250, "hello world!")
+    group(con, 250, 500, 250 => 0) do pointarea
+        Gattino.points!(pointarea, [1, 2, 8, 4, 3, 4], 1, 2, 6, 7, 4, 5)
+    end
+end
+```
+"""
+function context(f::Function, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
     con = Context(width, height, margin)
     f(con)
     con::Context
 end
 
-function merge!(c::AbstractContext, c2::AbstractContext)
-    c.window[:children] = vcat(c.window[:children], c2.window[:children])
-end
+"""
+```julia
+context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1) -> ::Context
+```
+This `context` method is used to create a new `Context` of a different size using the window of a different `Context`.
+```example
 
+```
+"""
 function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
-    con = Context(con.windowwidth. height, margin)
+    con = Context(con.window, width, height, margin)
     f(con)
     con::Context
 end
 
-function open_layer!(f::Function, con::AbstractContext, layer::String)
-    [f(e => comp) for (e, comp) in enumerate(con[layer][:children])]
-    nothing
-end
+"""
+```julia
+layers(con::AbstractContext) -> ::Vector{Pair{Int64, String}}
+```
+Shows layers of a `Context`.
+```example
+using Gattino
 
-function delete_layer!(con::Context, layer::String)
-    layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
-    deleteat!(con.window[:children], layerpos)
-    layers(con)
-end
+example = hist(["hello"], [500])
 
-rename_layer!(con::Context, layer::String, to::String) = begin
-    l = con.window[:children][layer]
-    l.name = to
-end
-
-function move_layer!(con::AbstractContext, layer::String, to::Int64)
-    layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
-    layercomp::Toolips.AbstractComponent = con.window[:children][layer]
-    deleteat!(con.window[:children], layerpos)
-    insert!(con.window[:children], to, layercomp)
-    layers(con)
-end
-
-function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
-    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
-    end
-    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
-    x2 = second[1], y2 = second[2])
-    style!(ln, styles ...)
-    draw!(con, [ln])
-end
-
-function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "black", "font-size" => 13pt)
-    end
-    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
-    style!(t, styles ...)
-    draw!(con, [t])
-end
-
-function star(name::String, p::Pair{String, <:Any} ...; x = 0::Int64, y = 0::Int64, points::Int64 = 5, 
-    outer_radius::Int64 = 100, inner_radius::Int64 = 200, angle::Number = pi / points, args ...)
-    spoints = star_points(x, y, points, outer_radius, inner_radius, angle)
-    comp = Component(name, "star", "points" => "'$spoints'", p ..., args ...)
-    comp.tag = "polygon"
-    push!(comp.properties, :x => x, :y => y, :r => outer_radius, :angle => angle, 
-    :np => points, :ir => inner_radius)
-    comp::Component{:star}
-end
-
-set_position!(comp::Component{:star}, x::Number, y::Number) = begin
-    pnts, angle, outer_radius, ir = comp[:np], comp[:angle], comp[:r], comp[:ir]
-    spoints = star_points(x, y, pnts, outer_radius, ir, angle)
-    comp["points"] = "'$spoints'"
-    nothing
-end
-
-function star_points(x::Int64, y::Int64, points::Int64, outer_radius::Int64, inner_radius::Int64, 
-    angle::Number)
-    step = pi / points
-    join([begin
-        r = e%2 == 0 ? inner_radius : outer_radius
-        posx = x + r * cos(i)
-        posy = y + r * sin(i)
-        "$posx $posy"
-    end for (e, i) in enumerate(range(0, step * (points * 2), step = step))], ",")::String
-end
-
-function shape_points(x::Int64, y::Int64, r::Int64, sides::Int64, angle::Number)
-    join([begin
-        posx = x + r * sin(i * angle)
-        posy = y + r * cos(i * angle)
-        "$posx $posy"
-    end for i in 1:sides], ",")::String
-end
-
-function shape(name::String, p::Pair{String, <:Any} ...; x::Int64 = 0, y::Int64 = 0, 
-    sides::Int64 = 3, r::Int64 = 100, angle::Number = 2 * pi / sides, args ...)
-    points = shape_points(x, y, r, sides, angle)
-    comp = Component(name, "shape", "points" => "'$points'", p ..., args ...)
-    comp.tag = "polygon"
-    push!(comp.properties, :x => x, :y => y, :r => r, :sides => sides, :angle => angle)
-    comp::Component{:shape}
-end
-
-struct GattinoShape{T <: Any} end
-
-shape(comp::Component{<:Any}) = GattinoShape{typeof(comp).parameters[1]}()
-
-reshape(comp::Component{<:Any}, into::Symbol; args ...) = reshape(shape, GattinoShape{into}(); args ...)
-
-function reshape(con::AbstractContext, layer::String, into::Symbol; args ...)
-    shape = GattinoShape{into}()
-    con.window[:children][layer][:children] = [reshape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
-end
-
-function reshape(shape::Component{:circle}, into::GattinoShape{:star}; outer_radius::Int64 = 5, inner_radius::Int64 = 3,
-    points::Int64 = 5, args ...)
-    s = ToolipsSVG.position(shape)
-    star(shape.name, x = s[1], y = s[2], outer_radius = outer_radius, inner_radius = inner_radius, points = points)::Component{:star}
-end
-
-function reshape(shape::Component{:circle}, into::GattinoShape{:square}; outer_radius::Int64 = 5, inner_radius::Int64 = 3,
-    points::Int64 = 5, args ...)
-    xy = ToolipsSVG.position(shape)
-    rad = shape[:r]
-    rect(randstring(4), x = xy[1] - rad, y = xy[2] - rad, width = rad, height = rad)::Component{:rect}
-end
-
-function reshape(comp::Component{:circle}, into::GattinoShape{:shape}; sides::Int64 = 3, r::Int64 = 5, angle::Number = 2 * pi / sides, args ...)
-    s = ToolipsSVG.position(comp)
-    shape(comp.name, x = s[1], y = s[2], sides = sides, r = r, angle = angle)::Component{:shape}
-end
-
-function size(comp::Component{:star})
-    (comp[:r], comp[:r])
-end
-
-function size(comp::Component{:shape})
-    (comp[:r], comp[:r])
-end
-
-set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
-
-function set!(ecomp::Pair{Int64, <:Toolips.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
-    maxval::Number = maximum(vec)
-    ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
-end
-
-function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
-    maxval::Number = maximum(vec)
-    style!(ecomp[2], [p[1] => string(Int64(round(vec[ecomp[1]] / maxval * p[2]))) for p in stylep] ...)
-end
-
-function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, key::String, vec::Vector{String})
-    style!(ecomp[2], key => vec[ecomp[1]])
-end
-
-function style!(ecomp::Pair{Int64, <:Toolips.AbstractComponent}, p::Pair{String, String} ...)
-    style!(ecomp[2], p ...)
-end
-
-function set_gradient!(ecomp::Pair{Int64, <:Toolips.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
-    maxval::Number = maximum(vec)
-    divisions = length(colors)
-    div_amount = floor(maxval / divisions)
-    laststep = minimum(vec)
-    for color in colors
-        if vec[ecomp[1]] in laststep:div_amount
-            style!(ecomp[2], "fill" => color)
-            break
-        end
-        laststep, div_amount = div_amount, div_amount + div_amount
-    end
-end
-
-function show(io::IO, con::AbstractContext)
-    display(MIME"text/html"(), con.window)
-end
-
-function show(io::Base.TTY, con::AbstractContext)
-    println(io, "Context ($(con.dim[1]) x $(con.dim[2]))")
-end
+layers(example)
+```
+"""
+layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
-layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
-
-function draw!(c::AbstractContext, comps::Vector{<:Servable})
+function draw!(c::AbstractContext, comps::Vector{<:ToolipsSVG.Servable})
     current_len::Int64 = length(c.window[:children])
     comp_len::Int64 = length(comps)
-    c.window[:children] = Vector{Servable}(vcat(c.window[:children], comps))
-    nothing
-end
-
-function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
-    [style!(c, spairs ...) for c in con.window[:children][s][:children]]
-    nothing
-end
-#==TODO
-I need some sort of function that will be able to style elements based on their 
-    color, radius, whatever.
-function style!(con::AbstractContext, s::String, x::Vector{String})
-
-end
-==#
-function style!(con::AbstractContext, spairs::Pair{String, String} ...)
-    style!(con.window, spairs ...)
+    c.window[:children] = vcat(c.window[:children], comps)
     nothing
 end
 
@@ -423,7 +319,22 @@ function group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[
     draw!(c, Vector{Servable}([gr.window]))
 end
 
-function animate!(con::AbstractContext, layer::String, animation::Animation)
+function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
+    layer = con.window[:children][s]
+    if length(layer[:children]) > 0
+        [style!(c, spairs ...) for c in layer[:children]]
+        return(nothing)
+    end
+    style!(layer, spairs ...)
+    nothing::Nothing
+end
+
+function style!(con::AbstractContext, spairs::Pair{String, String} ...)
+    style!(con.window, spairs ...)
+    nothing
+end
+
+function animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames)
     style = Style(".$(animation.name)-style")
     animate!(style, animation)
     [comp[:class] = style.name[2:length(style.name)] for comp in con.window[:children][layer][:children]]
@@ -431,4 +342,155 @@ function animate!(con::AbstractContext, layer::String, animation::Animation)
     if isnothing(n)
         push!(con.window.extras, style, animation)
     end
+end
+
+"""
+```julia
+merge!(c::AbstractContext, c2::AbstractContext) -> ::Nothing
+```
+
+```example
+
+```
+"""
+function merge!(c::AbstractContext, c2::AbstractContext)
+    c.window[:children] = vcat(c.window[:children], c2.window[:children])
+end
+
+"""
+```julia
+delete_layer!(con::Context, layer::String) -> ::Nothing
+```
+
+```example
+
+```
+"""
+function delete_layer!(con::Context, layer::String)
+    layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
+    deleteat!(con.window[:children], layerpos)
+    layers(con)
+end
+
+"""
+```julia
+rename_layer!(con::Context, layer::String, to::String) -> ::Nothing
+```
+
+```example
+
+```
+"""
+rename_layer!(con::Context, layer::String, to::String) = begin
+    l = con.window[:children][layer]
+    l.name = to
+    nothing
+end
+
+
+"""
+```julia
+move_layer!(con::Context, layer::String, to::Int64) -> ::Nothing
+```
+
+```example
+
+```
+"""
+function move_layer!(con::AbstractContext, layer::String, to::Int64)
+    layerpos = findfirst(comp -> comp.name == layer, con.window[:children])
+    layercomp::ToolipsSVG.AbstractComponent = con.window[:children][layer]
+    deleteat!(con.window[:children], layerpos)
+    insert!(con.window[:children], to, layercomp)
+    layers(con)
+end
+
+"""
+```julia
+open_layer!(f::Function, con::AbstractContext, layer::String) -> ::Nothing
+```
+
+```example
+
+```
+"""
+function open_layer!(f::Function, con::AbstractContext, layer::String)
+    [begin
+        f(e => comp)
+        con[layer][:children][e] = comp 
+    end for (e, comp) in enumerate(con[layer][:children])]
+    nothing::Nothing
+end
+
+"""
+```julia
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, args ...; keyargs ...)
+```
+`set!` is used in tandem with `open_layer!` to set the properties of elements -- usually according
+to data.
+```julia
+# sets every component's property statically:
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, value::Any)
+# scales the value based on `vec`, using `max` for values that are `100`-percent of the maximum of `vec`.
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
+# sets value to 
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:AbstractString})
+```
+The same dispatches are also available for `style!`.
+- See also: `style!`, `set_gradient!`, `open_layer!`, `set_shape!`, `Context`
+```example
+
+```
+"""
+function set! end
+
+set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, value::Any) = ecomp[2][prop] = value
+
+function set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:Number}; max::Int64 = 10)
+    maxval::Number = maximum(vec)
+    ecomp[2][prop] = Int64(round(vec[ecomp[1]] / maxval * max))
+end
+
+function set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::Symbol, vec::Vector{<:AbstractString})
+    ecomp[2][prop] = vec[ecomp[1]]
+end
+
+function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
+    maxval::Number = maximum(vec)
+    divisions = length(colors)
+    div_amount = floor(maxval / divisions)
+    laststep = minimum(vec)
+    for color in colors
+        if vec[ecomp[1]] in laststep:div_amount
+            style!(ecomp[2], "fill" => color)
+            break
+        end
+        laststep, div_amount = div_amount, div_amount + div_amount
+    end
+end
+
+function style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
+    maxval::Number = maximum(vec)
+    style!(ecomp[2], [p[1] => string(Int64(round(vec[ecomp[1]] / maxval * p[2]))) for p in stylep] ...)
+end
+
+function style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, key::String, vec::Vector{String})
+    style!(ecomp[2], key => vec[ecomp[1]])
+end
+
+function style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, p::Pair{String, String} ...)
+    style!(ecomp[2], p ...)
+end
+
+function set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...)
+    shape = SVGShape{into}
+    con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
+end
+
+function show(io::IO, con::AbstractContext)
+    display(MIME"text/html"(), con.window)
+end
+
+function show(io::Base.TTY, con::AbstractContext)
+    println(io, "Context ($(con.dim[1]) x $(con.dim[2]))")
 end

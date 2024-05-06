@@ -1,7 +1,63 @@
 include("Contexts.jl")
 
+"""
+```julia
+text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...) -> ::Nothing
+```
+Draws `text` with the text `text` and the styles `styles` at (`x`, `y`) on a `Context` (`con`).
+```example
+
+```
+"""
+function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => 13pt)
+    end
+    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
+    style!(t, styles ...)
+    draw!(con, [t])
+    nothing::Nothing
+end
+
+"""
+```julia
+line!(con::AbstractContext, args ...) -> ::Nothing
+```
+Draws a line onto a `Context` `styles` may be provided to style the line on creation. 
+One thing to note is that the `line!(con::AbstractContext, first::Pair{<:Number, <:Number},
+second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)` method is for drawing an 
+**unscaled** line, whereas this is not the case for the other dispatches.
+```julia
+# draw a non-scaled x -> y line
+line!(con::AbstractContext, first::Pair{<:Number, <:Number},
+    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
+# scaled, line plot line:
+line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+    styles::Pair{String, <:Any} ...)
+
+line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
+        styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
+
+line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
+        styles::Pair{String, <:Any} ...)
+```
+```example
+
+```
+"""
+function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
+    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
+    x2 = second[1], y2 = second[2])
+    style!(ln, styles ...)
+    draw!(con, [ln])
+end
+
 function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
-        styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
+        styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
@@ -23,6 +79,7 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     line_comp = ToolipsSVG.polyline("newline", points = line_data)
     style!(line_comp, styles ...)
     draw!(con, [line_comp])
+    nothing::Nothing
 end
 
 function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
@@ -30,6 +87,46 @@ function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
     line!(con, [string(d) for d in x], y, styles ...)
 end
 
+function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
+    ymin::Number = minimum(y), xmin::Number = minimum(x))
+if length(styles) == 0
+    styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+end
+if length(x) != length(y)
+    throw(DimensionMismatch("x and y, of lengths $(length(x)) and $(length(y)) are not equal!"))
+end
+xmax::Number, ymax::Number = maximum(x), maximum(y)
+percvec_x = map(n::Number -> n / xmax, x)
+percvec_y = map(n::Number -> n / ymax, y)
+line_data = join([begin
+                scaled_x::Int64 = round(con.dim[1] * xper)  + con.margin[1]
+                scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
+                "$(scaled_x)&#32;$(scaled_y),"
+            end for (xper, yper) in zip(percvec_x, percvec_y)])
+line_comp = ToolipsSVG.polyline("newline", points = line_data)
+style!(line_comp, styles ...)
+draw!(con, [line_comp])
+end
+
+"""
+```julia
+gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number})
+```
+
+```julia
+gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+gridlabels!(con::AbstractContext, y::Vector{<:Number}, n::Int64 = 4, styles::Pair{String, String} ...)
+gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+gridlabels!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+```
+```example
+
+```
+"""
 function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     n::Int64 = 4, styles::Pair{String, <:Any}...)
     if length(styles) == 0
@@ -72,7 +169,7 @@ end
 my = con.margin[2]
 mx = con.margin[1]
 y_min, y_max = minimum(y), maximum(y)
-division_amounty::Int64 = Int64(round((con.dim[2]) / n))
+division_amounty::Int64 = Int64(ceil((con.dim[2]) / n))
 y_offset = Int64(round(division_amounty * 0.3))
 ystep = (y_max - y_min) / n
 permx = Int64(round(con.dim[1] * 0.05))
@@ -95,7 +192,7 @@ end
 unique_strings = unique(x)
 mx = con.margin[1]
 my = con.margin[2]
-x_min, x_max = minimum(y), maximum(y)
+y_min, y_max = minimum(y), maximum(y)
 division_amountx::Int64 = round((con.dim[1]) / n)
 division_amounty::Int64 = round((con.dim[2]) / n)
 x_offset = Int64(round(division_amountx * 0.75))
@@ -116,44 +213,35 @@ cy = y_max
     cx += xstep
     cy -= ystep
     end for (xcoord, ycoord) in zip(
-    range(x_min, con.dim[1], step=division_amountx),
+    range(0, con.dim[1], step=division_amountx),
     range(y_min, con.dim[2], step=division_amounty))]
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
-n::Int64 = 4, styles::Pair{String, <:Any}...)
-gridlabels!(con, [string(v) for v in x], y, n, styles...)
+    n::Int64 = 4, styles::Pair{String, <:Any}...)
+    gridlabels!(con, [string(v) for v in x], y, n, styles...)
 end
 
-function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-        styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
-    end
-    if length(x) != length(y)
-        throw(DimensionMismatch("x and y, of lengths $(length(x)) and $(length(y)) are not equal!"))
-    end
-    xmax::Number, ymax::Number = maximum(x), maximum(y)
-    percvec_x = map(n::Number -> n / xmax, x)
-    percvec_y = map(n::Number -> n / ymax, y)
-    line_data = join([begin
-                    scaled_x::Int64 = round(con.dim[1] * xper)  + con.margin[1]
-                    scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
-                    "$(scaled_x)&#32;$(scaled_y),"
-                end for (xper, yper) in zip(percvec_x, percvec_y)])
-    line_comp = ToolipsSVG.polyline("newline", points = line_data)
-    style!(line_comp, styles ...)
-    draw!(con, [line_comp])
-end
+"""
+```julia
+grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} ...) -> ::Nothing
+```
 
+```julia
+
+```
+```example
+
+```
+"""
 function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "lightblue", "stroke-width" => "1", "opacity" => 80percent)
     end
     mx = con.margin[1]
     my = con.margin[2]
-    division_amountx::Int64 = round((con.dim[1]) / n)
-    division_amounty::Int64 = round((con.dim[2]) / n)
+    division_amountx::Int64 = ceil((con.dim[1]) / n)
+    division_amounty::Int64 = ceil((con.dim[2]) / n)
     [begin
         line!(con, xcoord + mx => 0 + my, xcoord + mx => con.dim[2] + my, styles ...)
         line!(con, 0 + mx => ycoord + my, con.dim[1] + mx => ycoord + my, styles ...)
@@ -163,12 +251,13 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
 end
 
 function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), r::Int64 = 5)
+    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
+    xmin::Number = minimum(x), ymin::Number = minimum(y), r::Int64 = 5)
    if length(styles) == 0
        styles = ("fill" => "orange", "stroke" => "lightblue", "stroke-width" => "0")
    end
-   percvec_x::Vector{<:Number} = map(n::Number -> (n - minimum(x)) / (maximum(x) - minimum(x)), x)
-   percvec_y::Vector{<:Number} = map(n::Number -> (n - minimum(y)) / (maximum(y) - minimum(y)), y)
+   percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x)
+   percvec_y::Vector{<:Number} = map(n::Number -> (n - ymin) / (ymax - ymin), y)
    draw!(con, Vector{Servable}([begin
        cx = Int64(round(percvec_x[i] * (con.dim[1] - 1) + con.margin[1]))
        cy = Int64(round(con.dim[2] - percvec_y[i] * (con.dim[2] - 1) + con.margin[2]))
@@ -188,15 +277,14 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
      con.margin[1] => con.dim[2] + con.margin[2], styles ...)
 end
 
-function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
+function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
+    ymin::Number = minimum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
     n_features::Int64 = length(x)
-    ymax::Number = maximum(y)
     n = 0
-    y_min, y_max = minimum(y), maximum(y)
-    percvec_y = map(n::Number -> (n - y_min) / (y_max - y_min), y)
+    percvec_y = map(n::Number -> (n - ymin) / (ymax - ymin), y)
     block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
@@ -209,20 +297,20 @@ function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     draw!(con, rects)
 end
 
-function bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y))
-    bars!(con, [string(v) for v in x], y, styles ..., ymax = ymax)
+function bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
+    bars!(con, [string(v) for v in x], y, styles ..., ymax = ymax, ymin = ymin)
 end
 
-function barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
+function barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String, String} ...)
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => "11pt")
     end
     n_features::Int64 = length(x)
-    block_width = Int64(round(con.dim[1] / n_features))
-    offset::Int64 = Int64(round(block_width * 0.15))
+    block_width = Int64(ceil(con.dim[1] / n_features))
+    offset::Int64 = Int64(ceil(block_width * 0.15))
     perm_y = Int64(round(con.dim[2] - con.dim[2] * 0.20))
     [begin
-        text!(con, xval + con.margin[1] + offset, perm_y, x[e], styles ...)
+        text!(con, xval + con.margin[1] + offset, perm_y, string(x[e]), styles ...)
     end for (e, xval) in enumerate(range(1, n_features * block_width, step = block_width))]
     return
 end
