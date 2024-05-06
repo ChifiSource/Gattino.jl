@@ -407,14 +407,22 @@ color = randcolor()
 """
 function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(), features::Pair{String, <:AbstractVector} ...; 
     divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = [randcolor() for co in x], 
-    ymin::Number = minimum(y), ymax::Number = maximum(y))
+    ymin::Number = 0, ymax::Number = 0)
     frequency::Bool = false
+    n::Int64 = length(y)
+    if ymax == 0 && ~(n == 0)
+        ymax = maximum(y)
+    end
+    if ymin == 0 && ~(n == 0)
+        ymin = minimum(y)
+    elseif n == 0
+        ymax = maximum(x)
+        ymin = minimum(x)
+    end
     if length(y) == 0
         frequency = true
     elseif length(x) != length(y)
-        throw(
-            DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))")
-        )
+        throw(DimensionMismatch("x and y must be of the same length! got ($(length(x)), $(length(y)))"))
     end
     w::Int64, h::Int64 = con.dim[1], con.dim[2]
     ml::Int64, mt::Int64 = con.margin[1], con.margin[2]
@@ -434,23 +442,29 @@ function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} 
         group!(plotgroup, "grid") do g::Group
             grid!(g, divisions)
         end
-        group!(plotgroup, "bars") do g::Group
-            if ~(frequency)
+        if ~(frequency)
+            group!(plotgroup, "bars") do g::Group
                 bars!(g, x, y, ymin = ymin, ymax = ymax)
-                return
             end
-            bars!(g, x)
-        end
-        open_layer!(con, "bars") do ecomp
-            style!(ecomp, "fill", colors)
-        end
-        group!(plotgroup, "labels") do g::Group
-            barlabels!(g, x)
-            gridlabels!(g, y, divisions)
+            group!(plotgroup, "labels") do g::Group
+                barlabels!(g, x)
+                gridlabels!(g, y, divisions)
+            end
+        else
+            group!(plotgroup, "bars") do g::Group
+                bars!(g, ["" for y in x], x, ymin = ymin, ymax = ymax)
+            end
+            group!(plotgroup, "labels") do g::Group
+                barlabels!(g, x)
+                gridlabels!(g, x, divisions)
+            end
         end
         group!(plotgroup, "axislabels") do g::Group
 
         end
+    end
+    open_layer!(con, "bars") do ecomp
+        style!(ecomp, "fill", colors)
     end
     con::AbstractContext
 end

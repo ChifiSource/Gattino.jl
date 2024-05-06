@@ -487,26 +487,6 @@ function set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...)
     con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
 end
 
-function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
-    second::Pair{<:Number, <:Number}, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
-    end
-    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
-    x2 = second[1], y2 = second[2])
-    style!(ln, styles ...)
-    draw!(con, [ln])
-end
-
-function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
-    if length(styles) == 0
-        styles = ("fill" => "black", "font-size" => 13pt)
-    end
-    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
-    style!(t, styles ...)
-    draw!(con, [t])
-end
-
 function show(io::IO, con::AbstractContext)
     display(MIME"text/html"(), con.window)
 end
