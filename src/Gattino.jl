@@ -150,7 +150,7 @@ scatter -> ::AbstractContext
 from a data structure using a single function call. These all create a new context and call their respective `_plot!` function. 
     For example, `scatter` will call `scatter_plot!` -- these functions may also be used to add plots to existing contexts. 
     The arguments for the `_plot!` equivalents are passed down from their plot creation functions. As a result, each dispatch 
-    of `scatter` is a pass-through to the main dispatch of `scatter_plot!`, and arguments for that `Function` may be used.
+    of `scatter` is a pass-through to the main dispatch of `scatter_plot!`, and arguments for that `Function` may be used. `width` and `height`
 - For a `scatter` plot, both `x` and `y` must be numerical.
 ```example
 using DataFrames
@@ -355,8 +355,13 @@ end
 `line` -> ::AbstractContext
 ```
 `line`, `scatter`, and `hist` are all high-level plotting functions used to create a `Context` and display features 
-from a data structure using a single function call. (returns a `Context`)
+from a data structure using a single function call. `line` takes the same arguments as `line_plot!`, like the other plotting functions. 
+    A `line` plot can be created using both a numberical and a non-numerical X.
 ```julia
+```
+###### methods
+```julia
+# from vectors
 line(x::Vector{<:Any}, y::Vector{<:Any}, args ...; keyargs ...)
 line(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
@@ -394,13 +399,14 @@ hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{
     divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), 
     ymin::Number = minimum(y), ymax::Number = maximum(y))
 ```
-Mutates `con` by drawing a scatter plot onto it. `divisions` is the number of rows and columns for the grid and its labels.
+Mutates `con` by drawing a bar chart onto it. `y` is optional -- not providing a `y` (providing one vector) will create a histogram 
+measuring the frequency of `x`. This function is called by the plotting function `hist` to create a histogram on a new `Context`.
 ```example
 color = randcolor()
 ```
 """
 function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(), features::Pair{String, <:AbstractVector} ...; 
-    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), 
+    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = [randcolor() for co in x], 
     ymin::Number = minimum(y), ymax::Number = maximum(y))
     frequency::Bool = false
     if length(y) == 0
@@ -435,6 +441,9 @@ function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} 
             end
             bars!(g, x)
         end
+        open_layer!(con, "bars") do ecomp
+            style!(ecomp, "fill", colors)
+        end
         group!(plotgroup, "labels") do g::Group
             barlabels!(g, x)
             gridlabels!(g, y, divisions)
@@ -450,11 +459,15 @@ end
 ```julia
 hist -> ::AbstractContext
 ```
+The non-mutating version of `hist_plot!` -- creates a `Context` and then uses `hist_plot!` to draw a histogram/barchart onto it 
+(depending on the arguments). Like `scatter` and `line`, the arguments are passed through to the plotting functions and may be used from 
+these functions. `width` and `height` may also be provided. For this type of plot, only `x` can be non-numerical. 
 
+In reference to this function, we should also note context_plotting's `vbars!`
 """
 hist(x::Vector{<:Any}, args ...; width::Int64 = 500, height::Int64 = 500, keyargs ...) = hist_plot!(Context(width, height), x, args ...; keyargs ...)
 
-function hist(features::Dict{String, <:AbstractVector}, x::String, y::String, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
+function hist(x::String, y::String, features::Dict{String, <:AbstractVector}, colors::Vector{String} = [randcolor() for e in 1:length(features)]; width::Int64 = 500, 
     height::Int64 = 500, keyargs ...)
     newfs = filter(k -> ~(string(k[1]) == x || string(k[1]) == y), features)
     context(width, height) do con::Context
@@ -462,13 +475,13 @@ function hist(features::Dict{String, <:AbstractVector}, x::String, y::String, co
     end
 end
 
-function hist(features::Any, args ...; keyargs ...)
+function hist(features::Any, x::Any = names(features)[1], y::Any = names(features)[2], args ...; keyargs ...)
     try
         features = Dict{String, AbstractVector}(string(name) => Vector(col) for (name, col) in zip(names(features), eachcol(features)))
     catch
         throw("$(typeof(features)) is not compatible with `Gattino`. (Gattino uses `names` and `eachcol`.)")
     end
-    hist(features, args ...; keyargs ...)
+    hist(string(x), string(y), features, args ...; keyargs ...)
 end
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
