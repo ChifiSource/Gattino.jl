@@ -402,6 +402,26 @@ function barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String,
     return
 end
 
+"""
+```julia
+v_bars!(con::AbstractContext, args ...; ymax::Number = maximum(y), ymin::Number = maximum(y)) -> ::Nothing
+```
+Draws scaled **vertical** "bars" onto `con` according to the data of `x` and `y`. `ymin` and `ymax` are provided to change the numerical scaling. 
+There is also a vertical equivalent, `v_bars!`. This is identical to `bars!`, just the vertical version -- which runs from left and right instead of up 
+and down, stacking the bars vertically. Like `bars!`, `v_bars!` also has `v_barlabels!`.
+```julia
+v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
+    ymin::Number = minimum(y))
+v_bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
+```
+```example
+con = context(100, 100) do con::Context
+    Gattino.grid!(con)
+    Gattino.v_bars!(con, ["one", "two", "three"], [50, 20, 30], ymin = 0, ymax = 50)
+    Gattino.axes!(con)
+end
+```
+"""
 function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; 
     ymax::Number = maximum(y), ymin::Number = minimum(y))
     if length(styles) == 0
@@ -425,11 +445,12 @@ end
 function v_bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
     v_bars!(con, [string(v) for v in x], y, styles ..., ymax = ymax, ymin = ymin)
 end
+
 """
 ```julia
-barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String, String} ...) -> ::Nothing
+v_barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String, String} ...) -> ::Nothing
 ```
-Draws labels for the "bars" created by `bars!`. Also has a `v_bars!` equivalent in `v_barlabels!`.
+Draws labels for the **vertical** "bars" created by `v_bars!`.
 ```example
 con = context(100, 100) do con::Context
     Gattino.grid!(con)
@@ -447,40 +468,58 @@ function v_barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles:
     n_features::Int64 = length(x)
     block_width = Int64(round(con.dim[2] / n_features))
     offset::Int64 = Int64(round(block_width * 0.5))
-    perm_x = Int64(round(con.dim[1] * 0.14))
+    perm_x::Int64 = Int64(round(con.dim[1] * 0.14))
     [begin
         text!(con, perm_x + con.margin[1], yval + offset + con.margin[2], x[e], styles ...)
     end for (e, yval) in enumerate(range(1, n_features * block_width, step = block_width))]
     return
 end
 
-function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right")
+"""
+```julia
+legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right", 
+    sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12) -> ::Nothing
+```
+Builds a new legend box on `con`, adding a sample of each layer presented in `names`. New elements, including custom elements, 
+can be appended using `append_legend!`. Legend elements can be removed with `remove_legend!`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.grid!(con)
+    x = ["one", "two", "three"]
+    group!(con, "bars") do g
+        Gattino.bars!(g, x, [50, 20, 30], ymin = 0, ymax = 50)
+    end
+    Gattino.barlabels!(con, x)
+    Gattino.axes!(con)
+    legend!(con, ["bars"])
+end
+```
+"""
+function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right", 
+    sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
     if length(styles) == 0
         styles = ("stroke" => "darkgray", "fill" => "white", "stroke-width" => 2px)
     end
-    legg = ToolipsSVG.g("legend")
-    positionx = Int64(round(con.dim[1] / 2)) + con.margin[1]
-    scaler = Int64(round(con.dim[1] * .24))
+    legg::Component{:g} = ToolipsSVG.g("legend")
+    positionx::Int64 = Int64(round(con.dim[1] / 2)) + con.margin[1]
+    scaler::Int64 = Int64(round(con.dim[1] * .24))
     if contains(align, "right")
         positionx += scaler
     elseif contains(align, "left")
         positionx -= scaler
     end
-    positiony = Int64(round(con.dim[2] / 2)) + con.margin[2]
-    scaler = Int64(round(con.dim[2] * .20))
+    positiony::Int64 = Int64(round(con.dim[2] / 2)) + con.margin[2]
+    scaler::Int64 = Int64(round(con.dim[2] * .20))
     if contains(align, "top")
         positiony -= scaler
     elseif contains(align, "bottom")
         positiony += scaler
     end
-    ww = Int64(round(con.dim[1]) * .20)
-    hh = length(names) * 20
-    legbox = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
+    ww::Int64 = Int64(round(con.dim[1]) * .20)
+    hh::Int64 = length(names) * 20
+    legbox::Component{:rec} = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
     width = ww, height = hh)
     style!(legbox, styles ...)
-    sample_width = 20
-    sample_height = 20
-    sample_margin = 12
     push!(legg, legbox)
     [begin
         samp = con.window[:children][name][:children][1]
@@ -492,35 +531,47 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
         push!(legg, samp, samplabel)
     end for (e, name) in enumerate(names)]
     push!(con.window, legg)
+    nothing::Nothing
 end
 
-function append_legend!(con::AbstractContext, name::String)
-    legend = con["legend"]
-    n_features = length(legend[:children]) - 1
-    box = legend[:children]["legendbg"]
+"""
+```julia
+append_legend!(con::AbstractContext, name::String, args ...; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+```
+Builds a new legend box on `con`, adding a sample of each layer presented in `names`. New elements, including custom elements, 
+can be appended using `append_legend!`. Legend elements can be removed with `remove_legend!`.
+```julia
+# append by layer name, will sample the layer.
+append_legend!(con::AbstractContext, name::String; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+# append a custom `Component`.
+append_legend!(con::AbstractContext, name::String, samp::Component{<:Any}; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+```
+```example
+
+```
+"""
+function append_legend!(con::AbstractContext, name::String; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+    legend::Component{:g} = con["legend"]
+    n_features::Int64 = length(legend[:children]) - 1
+    box::Component{:rect} = legend[:children]["legendbg"]
     positionx, positiony = box[:x], box[:y]
     samp = con.window[:children][name][:children][1]
     box[:height] += 20
-    sample_width = 20
-    sample_height = 20
-    sample_margin = 12
     set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
     samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
     push!(legend, samp, samplabel)
-    nothing
+    nothing::Notihng
 end
 
-function append_legend!(con::AbstractContext, name::String, samp::Component{<:Any})
-    legend = con["legend"]
-    n_features = length(legend[:children]) - 1
-    box = legend[:children]["legendbg"]
-    positionx, positiony = box[:x], box[:y]
+function append_legend!(con::AbstractContext, name::String, samp::Component{<:Any}; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+    legend::Component{:g} = con["legend"]
+    n_features::Int64 = length(legend[:children]) - 1
+    box::Component{:rec} = legend[:children]["legendbg"]
+    positionx, positiony = box[:x], box[:y] + (sample_height + 1) * n_features
     box[:height] += 20
     sample_width = 20
-    sample_height = 20
-    sample_margin = 12
     if typeof(samp) == Component{:g}
         [set_position!(cmp, positionx + sample_margin * e, positiony + sample_margin * (n_features)) for (e, cmp) in enumerate(samp[:children])]
     else
@@ -530,12 +581,33 @@ function append_legend!(con::AbstractContext, name::String, samp::Component{<:An
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
     push!(legend, samp, samplabel)
-    nothing
+    nothing::Nothing
 end
 
+"""
+```julia
+remove_legend!(con::AbstractContext, name::String)
+```
+Removes a legend element by layer `name`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.grid!(con)
+    x = ["one", "two", "three"]
+    group!(con, "bars") do g
+        Gattino.bars!(g, x, [50, 20, 30], ymin = 0, ymax = 50)
+    end
+    Gattino.barlabels!(con, x)
+    Gattino.axes!(con)
+    legend!(con, ["bars"])
+end
+
+remove_legend!(con, "bars")
+```
+"""
 function remove_legend!(con::AbstractContext, name::String)
-    legendcs = con["legend"][:children]
+    legendcs::Vector{<:Component} = con["legend"][:children]
     legendcs["legendbg"][:height] -= 20
     pos = findfirst(comp -> comp.name == name, legendcs)
     deleteat!(legendcs, pos); deleteat!(legendcs, pos + 1)
+    nothing::Nothing
 end
