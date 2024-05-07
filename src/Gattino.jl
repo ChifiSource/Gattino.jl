@@ -442,6 +442,7 @@ function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} 
         group!(plotgroup, "grid") do g::Group
             grid!(g, divisions)
         end
+        x = vcat(x, [feature[2] for feature in features] ...)
         if ~(frequency)
             group!(plotgroup, "bars") do g::Group
                 bars!(g, x, y, ymin = ymin, ymax = ymax)
