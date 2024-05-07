@@ -81,7 +81,14 @@ The idea being that `xlabel`/`ylabel` would be used in place of the legend in th
 All of the key-word arguments for `scatter_plot!` are also key-word arguments for `scatter`, as well as 
 other plotting functions.
 ```example
-
+context(250, 250) do con::Context
+    Gattino.scatter_plot!(con, [rand(1:10) for x in 1:30], [rand(1:10) for x in 1:30])
+end
+```
+```julia
+con = context(100, 100) do con::Context
+    Gattino.points!(con, [1, 2, 3, 4, 4, 5], [4, 8, 2, 3, 2, 8, 1])
+end
 ```
 """
 function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 

@@ -111,9 +111,9 @@ end
 
 """
 ```julia
-gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number})
+gridlabels!(con::AbstractContext, args ...) -> ::Nothing
 ```
-
+Draws grid labels onto `con`.
 ```julia
 gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     n::Int64 = 4, styles::Pair{String, <:Any}...)
@@ -226,10 +226,7 @@ end
 ```julia
 grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} ...) -> ::Nothing
 ```
-
-```julia
-
-```
+Creates a simple grid, with `n` divisions.
 ```example
 
 ```
@@ -250,6 +247,22 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
+
+"""
+```julia
+points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
+    styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
+    xmin::Number = minimum(x), ymin::Number = minimum(y), r::Int64 = 5) -> ::Nothing
+```
+Draws scaled "scatter points" onto `con`. Providing `ymax`/`xmax` (etc.) will set the minimum and maximum from 
+which the points are drawn, which will usually be the top and bottom of your data. These can also be provided to 
+ascending plotting functions, e.g. `scatter` or `scatter_plot!`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.points!(con, [1, 2, 3, 4, 4, 5], [4, 8, 2, 3, 2, 8, 1])
+end
+```
+"""
 function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
     xmin::Number = minimum(x), ymin::Number = minimum(y), r::Int64 = 5)
@@ -267,6 +280,19 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
    end for i in 1:length(x)]))
 end
 
+"""
+```julia
+axes!(con::AbstractContext, styles::Pair{String, <:Any} ...) -> ::Nothing
+```
+Draws axes on `con` with `styles`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.points!(con, [1, 2, 3, 4, 4, 5], [4, 8, 2, 3, 2, 8, 1])
+    Gattino.axes!(con)
+    # Gattino.axes!(con, "stroke" => "purple")
+end
+```
+"""
 function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
@@ -274,9 +300,55 @@ function axes!(con::AbstractContext, styles::Pair{String, <:Any} ...)
     line!(con, con.margin[1] => con.dim[2] + con.margin[2],
      con.dim[1] + con.margin[1] => con.dim[2] + con.margin[2], styles ...)
     line!(con, con.margin[1] => con.margin[2],
-     con.margin[1] => con.dim[2] + con.margin[2], styles ...)
+    con.margin[1] => con.dim[2] + con.margin[2], styles ...)
+    nothing::Nothing
 end
 
+"""
+```julia
+axislabels!(con::AbstractContext, xlabel::AbstractString, ylabel::AbstractString,
+    styles::Pair{String, <:Any}...) -> ::Nothing
+```
+Draws axis labels onto `con`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.points!(con, [1, 2, 3, 4, 4, 5], [4, 8, 2, 3, 2, 8, 1])
+    Gattino.axes!(con)
+    Gattino.axislabels!(con, "x", "y", "fill" => "blue")
+end
+```
+"""
+function axislabels!(con::AbstractContext, xlabel::AbstractString, ylabel::AbstractString,
+    styles::Pair{String, <:Any}...)
+    if length(styles) == 0
+        styles = ("stroke" => "darkgray", "font-size" => "12pt")
+    end
+    x_label_offset = Int64(round(con.dim[1] / 2) + con.margin[1])
+    text!(con, x_label_offset, con.dim[2] + con.margin[2] - 30, xlabel, styles...)
+    y_label_offset = Int64(round(con.dim[2] / 2) + con.margin[2])
+    text!(con, con.margin[1] - 60, y_label_offset, ylabel, styles...)
+    nothing
+end
+
+"""
+```julia
+bars!(con::AbstractContext, args ...; ymax::Number = maximum(y), ymin::Number = maximum(y)) -> ::Nothing
+```
+Draws scaled "bars" onto `con` according to the data of `x` and `y`. `ymin` and `ymax` are provided to change the numerical scaling. 
+There is also a vertical equivalent, `v_bars!`.
+```julia
+bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
+    ymin::Number = minimum(y))
+bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
+```
+```example
+con = context(100, 100) do con::Context
+    Gattino.grid!(con)
+    Gattino.bars!(con, ["one", "two", "three"], [50, 20, 30], ymin = 0, ymax = 50)
+    Gattino.axes!(con)
+end
+```
+"""
 function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
     ymin::Number = minimum(y))
     if length(styles) == 0
@@ -301,6 +373,21 @@ function bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, s
     bars!(con, [string(v) for v in x], y, styles ..., ymax = ymax, ymin = ymin)
 end
 
+"""
+```julia
+barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String, String} ...) -> ::Nothing
+```
+Draws labels for the "bars" created by `bars!`. Also has a `v_bars!` equivalent in `v_barlabels!`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.grid!(con)
+    x = ["one", "two", "three"]
+    Gattino.bars!(con, x, [50, 20, 30], ymin = 0, ymax = 50)
+    Gattino.barlabels!(con, x)
+    Gattino.axes!(con)
+end
+```
+"""
 function barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String, String} ...)
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => "11pt")
@@ -315,14 +402,14 @@ function barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String,
     return
 end
 
-function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...)
+function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; 
+    ymax::Number = maximum(y), ymin::Number = minimum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
     n_features::Int64 = length(x)
-    ymax::Number = maximum(y)
     n = 0
-    percvec_y = map(n::Number -> (n - minimum(y)) / (maximum(y) - minimum(y)), y)
+    percvec_y = map(n::Number -> (n - ymin) / (ymax - ymin), y)
     block_width = Int64(round(con.dim[2] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
@@ -335,6 +422,24 @@ function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:
     draw!(con, rects)
 end
 
+function v_bars!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), ymin::Number = minimum(y))
+    v_bars!(con, [string(v) for v in x], y, styles ..., ymax = ymax, ymin = ymin)
+end
+"""
+```julia
+barlabels!(con::AbstractContext, x::Vector{<:Any}, styles::Pair{String, String} ...) -> ::Nothing
+```
+Draws labels for the "bars" created by `bars!`. Also has a `v_bars!` equivalent in `v_barlabels!`.
+```example
+con = context(100, 100) do con::Context
+    Gattino.grid!(con)
+    x = ["one", "two", "three"]
+    Gattino.bars!(con, x, [50, 20, 30], ymin = 0, ymax = 50)
+    Gattino.barlabels!(con, x)
+    Gattino.axes!(con)
+end
+```
+"""
 function v_barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles::Pair{String, String} ...)
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => "11pt")
@@ -347,18 +452,6 @@ function v_barlabels!(con::AbstractContext, x::Vector{<:AbstractString}, styles:
         text!(con, perm_x + con.margin[1], yval + offset + con.margin[2], x[e], styles ...)
     end for (e, yval) in enumerate(range(1, n_features * block_width, step = block_width))]
     return
-end
-
-function axislabels!(con::AbstractContext, xlabel::AbstractString, ylabel::AbstractString,
-    styles::Pair{String, <:Any}...)
-    if length(styles) == 0
-        styles = ("stroke" => "darkgray", "font-size" => "12pt")
-    end
-    x_label_offset = Int64(round(con.dim[1] / 2) + con.margin[1])
-    text!(con, x_label_offset, con.dim[2] + con.margin[2] - 30, xlabel, styles...)
-    y_label_offset = Int64(round(con.dim[2] / 2) + con.margin[2])
-    text!(con, con.margin[1] - 60, y_label_offset, ylabel, styles...)
-    nothing
 end
 
 function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right")
