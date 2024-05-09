@@ -271,7 +271,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
             orlabel = "line"
         end
         group!(plotgroup, orlabel) do g::Group
-            line!(g, x, y)
+            line!(g, x, y, xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
         end
         group!(plotgroup, "labels") do g::Group
             gridlabels!(g, x, y, divisions, ymax = ymax, xmax = xmax, ymin = ymin, xmin = xmin)
@@ -310,6 +310,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
         ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
     end
+    lbls::Vector{String} = Vector{String}()
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group
             axes!(g)
@@ -322,10 +323,10 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
             orlabel = "line"
         end
         group!(plotgroup, orlabel) do g::Group
-            line!(g, x, y)
+            line!(g, x, y, ymax = ymax, ymin = ymin)
         end
         group!(plotgroup, "labels") do g::Group
-            gridlabels!(g, x, y, divisions, ymax = ymax, xmax = xmax)
+            gridlabels!(g, x, y, divisions, ymax = ymax, ymin = ymin)
         end
         ymax = maximum(y)
         lbls = [begin

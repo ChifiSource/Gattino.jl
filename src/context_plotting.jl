@@ -64,10 +64,7 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     if length(x) != length(y)
         throw(DimensionMismatch("x and y, of lengths $(length(x)) and $(length(y)) are not equal!"))
     end
-    # Convert unique string values in x to numerical values
-    unique_strings = unique(x)
-    string_map = Dict(unique_strings[i] => i for i in 1:length(unique_strings))
-    numeric_x = [string_map[s] for s in x]
+    numeric_x = [e for e in 1:length(x)]
     xmax::Number = maximum(numeric_x)
     percvec_x = map(n::Number -> n / xmax, numeric_x)
     percvec_y = map(n::Number -> n / ymax, y)
@@ -83,30 +80,30 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
 end
 
 function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
-    styles::Pair{String, <:Any} ...)
-    line!(con, [string(d) for d in x], y, styles ...)
+    styles::Pair{String, <:Any} ...; kwargs ...)
+
+    line!(con, [string(d) for d in x], y, styles ...; kwargs ...)
 end
 
 function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
     styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), xmax::Number = maximum(x), 
     ymin::Number = minimum(y), xmin::Number = minimum(x))
-if length(styles) == 0
-    styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
-end
-if length(x) != length(y)
-    throw(DimensionMismatch("x and y, of lengths $(length(x)) and $(length(y)) are not equal!"))
-end
-xmax::Number, ymax::Number = maximum(x), maximum(y)
-percvec_x = map(n::Number -> n / xmax, x)
-percvec_y = map(n::Number -> n / ymax, y)
-line_data = join([begin
+    if length(styles) == 0
+        styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
+    end
+    if length(x) != length(y)
+        throw(DimensionMismatch("x and y, of lengths $(length(x)) and $(length(y)) are not equal!"))
+    end
+    percvec_x = map(n::Number -> (n - xmin) / (xmax - xmin), x)
+    percvec_y = map(n::Number -> (n - ymin) / (ymax - ymin), y)
+    line_data = join([begin
                 scaled_x::Int64 = round(con.dim[1] * xper)  + con.margin[1]
                 scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
                 "$(scaled_x)&#32;$(scaled_y),"
             end for (xper, yper) in zip(percvec_x, percvec_y)])
-line_comp = ToolipsSVG.polyline("newline", points = line_data)
-style!(line_comp, styles ...)
-draw!(con, [line_comp])
+    line_comp = ToolipsSVG.polyline("newline", points = line_data)
+    style!(line_comp, styles ...)
+    draw!(con, [line_comp])
 end
 
 """
@@ -185,8 +182,7 @@ function gridlabels!(con::AbstractContext, y::Vector{<:Number}, n::Int64 = 4, st
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
-    n::Int64 = 4, styles::Pair{String, <:Any}...; ymin::Number = minimum(y), ymax::Number = maximum(y), 
-    xmin::Number = minimum(x), xmax::Number = maximum(x))
+    n::Int64 = 4, styles::Pair{String, <:Any}...; ymin::Number = minimum(y), ymax::Number = maximum(y))
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => "10pt")
     end
