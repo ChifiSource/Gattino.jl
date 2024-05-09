@@ -81,7 +81,14 @@ The idea being that `xlabel`/`ylabel` would be used in place of the legend in th
 All of the key-word arguments for `scatter_plot!` are also key-word arguments for `scatter`, as well as 
 other plotting functions.
 ```example
-
+context(250, 250) do con::Context
+    Gattino.scatter_plot!(con, [rand(1:10) for x in 1:30], [rand(1:10) for x in 1:30])
+end
+```
+```julia
+con = context(100, 100) do con::Context
+    Gattino.points!(con, [1, 2, 3, 4, 4, 5], [4, 8, 2, 3, 2, 8, 1])
+end
 ```
 """
 function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; 
@@ -116,16 +123,16 @@ function scatter_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Nu
             orlabel = "points"
         end
         group!(plotgroup, orlabel) do g::Group
-            points!(g, x, y, "fill" => colors[1])
+            points!(g, x, y, "fill" => colors[1], ymax = ymax, xmax = xmax, ymin = ymin, xmin = xmin)
         end
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
                 points!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
             end
             string(feature[1])::String
-        end for (e, feature) in enumerate(features)]
+        end for (e, feature) in enumerate(filter(fet -> ~(typeof(fet[2]).parameters[1] <: AbstractString), features))]
         group!(plotgroup, "labels") do g::Group
-            gridlabels!(g, x, y, divisions)
+            gridlabels!(g, x, y, divisions, xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
         end
         if xlabel != "" || ylabel != ""
             group!(plotgroup, "axislabels") do g::Group
@@ -264,10 +271,10 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
             orlabel = "line"
         end
         group!(plotgroup, orlabel) do g::Group
-            line!(g, x, y)
+            line!(g, x, y, xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax)
         end
         group!(plotgroup, "labels") do g::Group
-            gridlabels!(g, x, y, divisions)
+            gridlabels!(g, x, y, divisions, ymax = ymax, xmax = xmax, ymin = ymin, xmin = xmin)
         end
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
@@ -303,6 +310,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
         w, h = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
         ml, mt = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
     end
+    lbls::Vector{String} = Vector{String}()
     group(con, w, h, ml => mt) do plotgroup::Group
         group!(plotgroup, "axes") do g::Group
             axes!(g)
@@ -315,10 +323,10 @@ function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
             orlabel = "line"
         end
         group!(plotgroup, orlabel) do g::Group
-            line!(g, x, y)
+            line!(g, x, y, ymax = ymax, ymin = ymin)
         end
         group!(plotgroup, "labels") do g::Group
-            gridlabels!(g, x, y, divisions)
+            gridlabels!(g, x, y, divisions, ymax = ymax, ymin = ymin)
         end
         ymax = maximum(y)
         lbls = [begin
@@ -399,19 +407,10 @@ color = randcolor()
 ```
 """
 function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} = Vector{Int64}(), features::Pair{String, <:AbstractVector} ...; 
-    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = [randcolor() for co in x], 
-    ymin::Number = 0, ymax::Number = 0)
+    divisions::Int64 = length(x), title::String = "", xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = [randcolor() for co in 1:length(x)], 
+    ymin::Number = minimum(y), ymax::Number = maximum(y))
     frequency::Bool = false
     n::Int64 = length(y)
-    if ymax == 0 && ~(n == 0)
-        ymax = maximum(y)
-    end
-    if ymin == 0 && ~(n == 0)
-        ymin = minimum(y)
-    elseif n == 0
-        ymax = maximum(x)
-        ymin = minimum(x)
-    end
     if length(y) == 0
         frequency = true
     elseif length(x) != length(y)
@@ -435,13 +434,17 @@ function hist_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number} 
         group!(plotgroup, "grid") do g::Group
             grid!(g, divisions)
         end
+        x = vcat(x, [feature[2] for feature in features] ...)
+        y = vcat(y, [y for feature in features] ...)
+        diff::Int64 =  length(x) - length(colors)
+        push!(colors, [randcolor() for x in 1:diff] ...)
         if ~(frequency)
             group!(plotgroup, "bars") do g::Group
                 bars!(g, x, y, ymin = ymin, ymax = ymax)
             end
             group!(plotgroup, "labels") do g::Group
                 barlabels!(g, x)
-                gridlabels!(g, y, divisions)
+                gridlabels!(g, y, divisions, ymin = ymin, ymax = ymax)
             end
         else
             group!(plotgroup, "bars") do g::Group

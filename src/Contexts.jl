@@ -167,7 +167,7 @@ display(con)
 ##### constructors
 - Context(::Component{:svg}, margin::Pair{Int64, Int64})
 - Context(width::Int64 = 1280, height::Int64 = 720, margin::Pair{Int64, Int64} = 0 => 0)
-    """
+"""
 mutable struct Context <: AbstractContext
     window::Component{:svg}
     uuid::String
@@ -248,8 +248,8 @@ con = context(500, 500) do con::Context
 end
 ```
 """
-function context(f::Function, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
-    con = Context(width, height, margin)
+function context(f::Function = c::Context -> c::Context, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
+    con::Context = Context(width, height, margin)
     f(con)
     con::Context
 end
@@ -264,7 +264,7 @@ This `context` method is used to create a new `Context` of a different size usin
 ```
 """
 function context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1)
-    con = Context(con.window, width, height, margin)
+    con::Context = Context(con.window, width, height, margin)
     f(con)
     con::Context
 end
@@ -286,13 +286,40 @@ layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.wi
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
+"""
+```julia
+draw!(c::AbstractContext, comps::Vector{<:ToolipsSVG.Servable}) -> ::Nothing
+```
+Draws the elements in `comps` onto the window of `c`.
+```example
+
+```
+"""
 function draw!(c::AbstractContext, comps::Vector{<:ToolipsSVG.Servable})
-    current_len::Int64 = length(c.window[:children])
-    comp_len::Int64 = length(comps)
     c.window[:children] = vcat(c.window[:children], comps)
-    nothing
+    nothing::Nothing
 end
 
+"""
+### Group <: AbstractContext
+- window::Component{:g}
+- uuid::String
+- dim::Int64{Int64, Int64}
+- margin::Pair{Int64, Int64}
+
+A `Group` is a `Context` which is held beneath another context. These 
+are used to create scaling with `group` and create layers with `group!`.
+##### example
+```
+
+```
+------------------
+##### constructors
+```julia
+Group(name::String = randstring(), width::Int64 = 1280, height::Int64 = 720,
+        margin::Pair{Int64, Int64} = 0 => 0)
+```
+"""
 mutable struct Group <: AbstractContext
     window::Component{:g}
     uuid::String
@@ -305,13 +332,36 @@ mutable struct Group <: AbstractContext
     end
 end
 
+"""
+```julia
+group(f::Function, c::AbstractContext, w::Int64 = c.dim[1],
+    h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin) -> ::Nothing
+```
+Creates a *scaling group* on `c`, the `Context` (or `Group`). This will *not* create 
+a layer, only a scaling window. This creates the `Group` in the same way, but draws its children to 
+`c`'s children. For layers, use `group!`
+```example
+
+```
+"""
 function group(f::Function, c::AbstractContext, w::Int64 = c.dim[1],
     h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin)
-    gr = Group("n", w, h, margin)
+    gr::Group = Group("n", w, h, margin)
     f(gr)
     draw!(c, Vector{Servable}([child for child in gr.window[:children]]))
+    nothing::Nothing
 end
 
+"""
+```julia
+group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[1],
+    h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin) -> ::Nothing
+```
+Creates a layer by name `name` on `c`, and scales that layer to the dimensions provided.
+```example
+
+```
+"""
 function group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[1],
     h::Int64 = c.dim[2], margin::Pair{Int64, Int64} = c.margin)
     gr = Group(name, w, h, margin)
@@ -319,6 +369,24 @@ function group!(f::Function, c::AbstractContext, name::String, w::Int64 = c.dim[
     draw!(c, Vector{Servable}([gr.window]))
 end
 
+"""
+###### gattino context styling
+```julia
+style!(con::AbstractContext, args ...) -> ::Nothing
+```
+`style!` is extended to work with `Gattino` contexts. We can style the window with 
+`style!(con::AbstractContext, spairs::Pair{String, String} ...)` and style layers with 
+`style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)` just as we would normal 
+components.
+```julia
+style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
+style!(con::AbstractContext, spairs::Pair{String, String} ...)
+```
+- See also: `animate!(::AbstractContext, ::String, ::ToolipsSVG.KeyFrames)`, `set!`, `Context`, `layers`
+```example
+
+```
+"""
 function style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
     layer = con.window[:children][s]
     if length(layer[:children]) > 0
@@ -331,24 +399,27 @@ end
 
 function style!(con::AbstractContext, spairs::Pair{String, String} ...)
     style!(con.window, spairs ...)
-    nothing
+    nothing::Nothing
 end
 
+"""
+```julia
+animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames) -> ::Nothing
+```
+Animates the layer `layer` with the animation `animation`.
+```example
+
+```
+"""
 function animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames)
-    style = Style(".$(animation.name)-style")
-    animate!(style, animation)
-    [comp[:class] = style.name[2:length(style.name)] for comp in con.window[:children][layer][:children]]
-    n = findfirst(s -> s.name == style.name, con.window.extras)
-    if isnothing(n)
-        push!(con.window.extras, style, animation)
-    end
+
 end
 
 """
 ```julia
 merge!(c::AbstractContext, c2::AbstractContext) -> ::Nothing
 ```
-
+Merges the contents of contexts `c` and `c2` into `c`'s `window`.
 ```example
 
 ```
@@ -361,7 +432,7 @@ end
 ```julia
 delete_layer!(con::Context, layer::String) -> ::Nothing
 ```
-
+Deletes the layer `layer` from `con` by name.
 ```example
 
 ```
@@ -376,7 +447,7 @@ end
 ```julia
 rename_layer!(con::Context, layer::String, to::String) -> ::Nothing
 ```
-
+Renames the layer `layer` to `to` on `con`.
 ```example
 
 ```
@@ -387,12 +458,12 @@ rename_layer!(con::Context, layer::String, to::String) = begin
     nothing
 end
 
-
 """
 ```julia
 move_layer!(con::Context, layer::String, to::Int64) -> ::Nothing
 ```
-
+Moves the layer up or down, making it more or less visible. `style!` with `z-index` 
+can also be used to rearrange the order of elements.
 ```example
 
 ```
@@ -407,9 +478,33 @@ end
 
 """
 ```julia
+set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...) -> ::Nothing
+```
+Sets the shape of each element in `layer` to `into`. This uses the `ToolipsSVG.SVGShape` 
+interface to reshape components. The available shapes built into this API are...
+- `:square`
+- `:circle`
+- `:polyshape`
+- `:rect`
+- and `:star`
+```example
+newscatter = scatter([1, 2, 3], [1, 2, 3])
+set_shape!(newscatter, "points", :star)
+```
+"""
+function set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...)
+    shape = SVGShape{into}
+    con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
+end
+
+"""
+```julia
 open_layer!(f::Function, con::AbstractContext, layer::String) -> ::Nothing
 ```
-
+`open_layer` will open `layer` from `con`, providing each `Component` inside of that layer, 
+alongside its enumeration, to `f`. With this, functions such as `set!`, `set_gradient!`, 
+and additional `style!` dispatches can be used to make changes to entire layers -- with some 
+dispatches, these layers are based on data and are able to further represent features.
 ```example
 
 ```
@@ -455,6 +550,16 @@ function set!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, prop::
     ecomp[2][prop] = vec[ecomp[1]]
 end
 
+"""
+```julia
+set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, 
+vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"]) -> ::Nothing
+```
+`set_gradient!` is used to display new values with a gradient between different colors with `open_layer!`.
+```example
+
+```
+"""
 function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
     maxval::Number = maximum(vec)
     divisions = length(colors)
@@ -469,6 +574,27 @@ function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable
     end
 end
 
+"""
+###### gattino layer styling
+```julia
+style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, args ...) -> ::Nothing
+```
+`style!` has bindings for styling layer data according to data, or otherwise.
+components.
+```julia
+# style the value of `stylep` based on the values of `vec` on the open components.
+style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
+# style each subsequent component with each subsequent element in `vec`
+style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, key::String, vec::Vector{String})
+# regular styling:
+style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, p::Pair{String, String} ...)
+```
+note that you can also `style!` by layer `name` on a `Context`.
+- See also: `animate!(::AbstractContext, ::String, ::ToolipsSVG.KeyFrames)`, `set!`, `Context`, `layers`, `open_layer!`
+```example
+
+```
+"""
 function style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
     maxval::Number = maximum(vec)
     style!(ecomp[2], [p[1] => string(Int64(round(vec[ecomp[1]] / maxval * p[2]))) for p in stylep] ...)
@@ -480,11 +606,6 @@ end
 
 function style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, p::Pair{String, String} ...)
     style!(ecomp[2], p ...)
-end
-
-function set_shape!(con::AbstractContext, layer::String, into::Symbol; args ...)
-    shape = SVGShape{into}
-    con.window[:children][layer][:children] = [set_shape(comp, shape, args ...) for comp in con.window[:children][layer][:children]]
 end
 
 function show(io::IO, con::AbstractContext)
