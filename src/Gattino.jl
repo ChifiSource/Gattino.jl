@@ -25,12 +25,46 @@ hist    #| hist_plot!
 ```
 - **contexts**
 ```julia
+AbstractContext
+compose
+vcat(comp::AbstractContext, cons::AbstractContext ...)
+hcat(comp::AbstractContext, cons::AbstractContext ...)
+vcat(comp::Component{:div}, cons::AbstractContext ...)
+hcat(comp::Component{:div}, cons::AbstractContext ...)
+Context
+context
+layers
+draw!
+Group
+group
+group!
+style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
+ToolipsServables.animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames)
+merge!(c::AbstractContext, c2::AbstractContext)
+delete_layer!
+rename_layer!
+move_layer!
+set_shape!
+open_layer!
+set!
+set_gradient!
+style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
 ```
 - **context plotting**
 ```julia
-```
-- **context drawing**
-```julia
+text!
+line!
+gridlabels!
+grid!
+points!
+axes!
+axislabels!
+bars!
+barlabels!
+v_bars!
+v_barlabels!
+legend!
+append_legend!
 ```
 """
 module Gattino
