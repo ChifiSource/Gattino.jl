@@ -56,6 +56,7 @@ text!
 line!
 gridlabels!
 grid!
+labeled_grid!
 points!
 axes!
 axislabels!

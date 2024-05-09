@@ -9,7 +9,7 @@ Draws `text` with the text `text` and the styles `styles` at (`x`, `y`) on a `Co
 
 ```
 """
-function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
+function text!(con::AbstractContext, x::Number, y::Number, text::String, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => 13pt)
     end
@@ -243,6 +243,48 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
+"""
+```julia
+labeled_grid!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, 
+        xlabels::Vector{<:Number}, ylabels::Vector{<:Number}, styles::Pair{String, <:Any} ...;
+        ymax::Number = maximum(y), ymin::Number = minimum(y), xmax::Number = maximum(x), xmin::Number = minimum(x))
+    percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x) -> ::Nothing
+```
+`labeled_grid!` is a `grid!` + `gridlabels!` alternative that works slightly differently. 
+Rather than a number of divisions provided, the specific numbers to create divisions are provided.
+```example
+x = [30, 20, 80, 10]
+y = [8, 16, 12, 11]
+mycon x = [30, 20, 80, 10]
+y = [8, 16, 12, 11]
+mycon = context(500, 500) do con::Context
+    Gattino.labeled_grid!(con, x, y, [20, 40, 90], [10, 20, 30], xmin = 0, xmax = 100, ymin = 0, ymax = 40)
+    Gattino.points!(con, x, y, xmin = 0, xmax = 100, ymin = 0, ymax = 40)
+end
+```
+"""
+function labeled_grid!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, 
+        xlabels::Vector{<:Number}, ylabels::Vector{<:Number}, styles::Pair{String, <:Any} ...;
+        ymax::Number = maximum(y), ymin::Number = minimum(y), xmax::Number = maximum(x), xmin::Number = minimum(x))
+    percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x)
+    mx::Number, my::Number = con.margin[1], con.margin[2]
+    x_offset = Int64(round(length(x) * 0.75))
+    y_offset = Int64(round(length(y) * 0.10))
+    # y is reversed
+    yat::Int64 = length(ylabels)
+    [begin
+        xnum = (xnumlabel - xmin) / (xmax - xmin) * con.dim[1]
+        ynum = (ynumlabel - ymin) / (ymax - ymin) * con.dim[2]
+        # x lines
+        line!(con, xnum + mx => 0 + my, xnum + mx => con.dim[2] + my, styles ...)
+        # y lines
+        line!(con, 0 + mx => ynum + my, con.dim[1] + mx => ynum + my, styles ...)
+        # labels
+        text!(con, 0 + mx, ynum + my - y_offset, string(ylabels[yat]), styles ...)
+        text!(con, xnum + mx, con.dim[2] - 10 + my, string(xnumlabel), styles...)
+        yat -= 1
+    end for (xnumlabel, ynumlabel) in zip(xlabels, ylabels)]
+end
 
 """
 ```julia
