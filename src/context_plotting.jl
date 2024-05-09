@@ -67,7 +67,7 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     numeric_x = [e for e in 1:length(x)]
     xmax::Number = maximum(numeric_x)
     percvec_x = map(n::Number -> n / xmax, numeric_x)
-    percvec_y = map(n::Number -> n / ymax, y)
+    percvec_y = map(n::Number -> (n - ymin) / (ymax - ymin), y)
     line_data = join([begin
                     scaled_x::Int64 = round(con.dim[1] * xper)  + con.margin[1]
                     scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
@@ -81,7 +81,6 @@ end
 
 function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
     styles::Pair{String, <:Any} ...; kwargs ...)
-
     line!(con, [string(d) for d in x], y, styles ...; kwargs ...)
 end
 

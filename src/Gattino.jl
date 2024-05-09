@@ -294,6 +294,29 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
     con::AbstractContext
 end
 
+"""
+```julia
+plot_margins(f::Function, con::AbstractContext) -> ::Group
+```
+---
+Will draw the changes in `f` into the default plot margins `Gattino` calculates 
+for `con`. This does some scaling math to determine the optimal size for the plot 
+    depending on the size of the window.
+```julia
+mycon = context() do con::Context
+    scatter_plot!(con, [1, 2, 3], [1, 2, 3], ymax = 6, ymin = 0, xmax = 6, xmin = 0, title = "my plot")
+    plot_margins(con) do g::Group
+        # we are now back to the same scaling our scatter plot is on (because we provided `title`).
+    end
+end
+```
+"""
+plot_margins(f::Function, con::AbstractContext) = begin
+    w::Int64, h::Int64 = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
+    ml::Int64, mt::Int64 = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
+    group(f, con, w, h, ml => mt)
+end
+
 function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = length(x), title::String = "", 
     xlabel::String = "", ylabel::String = "", legend::Bool = true, colors::Vector{String} = Vector{String}(["#FF6633"]), ymin::Number = minimum(y), ymax = maximum(y))
     if length(x) != length(y)
