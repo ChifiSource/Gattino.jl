@@ -128,22 +128,21 @@ gridlabels!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
 ```
 """
 function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
-    n::Int64 = 4, styles::Pair{String, <:Any}...)
+    n::Int64 = 4, styles::Pair{String, <:Any}...; ymin::Number = minimum(y), ymax::Number = maximum(y), 
+    xmin::Number = minimum(x), xmax::Number = maximum(x))
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => "10pt")
     end
     mx = con.margin[1]
     my = con.margin[2]
-    x_min, x_max = minimum(x), maximum(x)
-    y_min, y_max = minimum(y), maximum(y)
     division_amountx::Int64 = round((con.dim[1]) / n)
     division_amounty::Int64 = round((con.dim[2]) / n)
     x_offset = division_amountx * 0.30
     y_offset = division_amounty * 0.30
-    cx = x_min
-    xstep = (x_max - x_min) / n
-    ystep = (y_max - y_min) / n
-    cy = y_max
+    xstep = (xmax - xmin) / n
+    ystep = (ymax - ymin) / n
+    cx = xmin
+    cy = ymax
     [begin
         txt = string(cx)
         if length(txt) > 7
@@ -158,63 +157,65 @@ function gridlabels!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numb
         cx += xstep
         cy -= ystep
     end for (xcoord, ycoord) in zip(
-    range(Int64(round(x_min)), con.dim[1], step=division_amountx),
-    range(Int64(round(y_min)), con.dim[2], step=division_amounty))]
+    range(Int64(round(xmin)), con.dim[1], step=division_amountx),
+    range(Int64(round(ymin)), con.dim[2], step=division_amounty))]
 end
 
-function gridlabels!(con::AbstractContext, y::Vector{<:Number}, n::Int64 = 4, styles::Pair{String, String} ...)
-if length(styles) == 0
-styles = ("fill" => "black", "font-size" => "10pt")
-end
-my = con.margin[2]
-mx = con.margin[1]
-y_min, y_max = minimum(y), maximum(y)
-division_amounty::Int64 = Int64(ceil((con.dim[2]) / n))
-y_offset = Int64(round(division_amounty * 0.3))
-ystep = (y_max - y_min) / n
-permx = Int64(round(con.dim[1] * 0.05))
-cy = y_max
-[begin
-txt = string(cy)
-if length(txt) > 7
-    txt = txt[1:6]
-end
-text!(con, permx + mx, ycoord + my + y_offset, txt, styles ...)
-cy -= ystep
-end for ycoord in range(Int64(round(y_min)), con.dim[2], step=division_amounty)]
+function gridlabels!(con::AbstractContext, y::Vector{<:Number}, n::Int64 = 4, styles::Pair{String, String} ...; 
+    ymin::Number = minimum(y), ymax::Number = maximum(y))
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => "10pt")
+    end
+    my = con.margin[2]
+    mx = con.margin[1]
+    division_amounty::Int64 = Int64(ceil((con.dim[2]) / n))
+    y_offset::Int64 = Int64(round(division_amounty * 0.3))
+    ystep::Number = (ymax - ymin) / n
+    permx::Int64 = Int64(round(con.dim[1] * 0.05))
+    cy = ymax
+    [begin
+        txt = string(cy)
+        if length(txt) > 7
+            txt = txt[1:6]
+        end
+        text!(con, permx + mx, ycoord + my + y_offset, txt, styles ...)
+        cy -= ystep
+    end for ycoord in range(Int64(round(ymin)), con.dim[2], step=division_amounty)]
+    nothing::Nothing
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number},
-    n::Int64 = 4, styles::Pair{String, <:Any}...)
-if length(styles) == 0
-styles = ("fill" => "black", "font-size" => "10pt")
-end
-unique_strings = unique(x)
-mx = con.margin[1]
-my = con.margin[2]
-y_min, y_max = minimum(y), maximum(y)
-division_amountx::Int64 = round((con.dim[1]) / n)
-division_amounty::Int64 = round((con.dim[2]) / n)
-x_offset = Int64(round(division_amountx * 0.75))
-y_offset = Int64(round(division_amounty * 0.10))
-cx = 1
-xstep = 1
-ystep = (y_max - y_min) / n
-cy = y_max
-[begin
-    if cx <= length(unique_strings)
-        text!(con, xcoord + mx - x_offset, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
+    n::Int64 = 4, styles::Pair{String, <:Any}...; ymin::Number = minimum(y), ymax::Number = maximum(y), 
+    xmin::Number = minimum(x), xmax::Number = maximum(x))
+    if length(styles) == 0
+        styles = ("fill" => "black", "font-size" => "10pt")
     end
-    txt = string(cy)
-    if length(txt) > 7
-        txt = txt[1:6]
-    end
-    text!(con, 0 + mx, ycoord + my - y_offset, txt, styles ...)
-    cx += xstep
-    cy -= ystep
+    unique_strings = unique(x)
+    mx = con.margin[1]
+    my = con.margin[2]
+    division_amountx::Int64 = round((con.dim[1]) / n)
+    division_amounty::Int64 = round((con.dim[2]) / n)
+    x_offset = Int64(round(division_amountx * 0.75))
+    y_offset = Int64(round(division_amounty * 0.10))
+    cx = 1
+    xstep = 1
+    ystep = (ymax - ymin) / n
+    cy = ymax
+    [begin
+        if cx <= length(unique_strings)
+            text!(con, xcoord + mx - x_offset, con.dim[2] - 10 + my, unique_strings[Int64(round(cx))], styles ...)
+        end
+        txt = string(cy)
+        if length(txt) > 7
+            txt = txt[1:6]
+        end
+        text!(con, 0 + mx, ycoord + my - y_offset, txt, styles ...)
+        cx += xstep
+        cy -= ystep
     end for (xcoord, ycoord) in zip(
-    range(0, con.dim[1], step=division_amountx),
-    range(y_min, con.dim[2], step=division_amounty))]
+        range(0, con.dim[1], step=division_amountx),
+        range(ymin, con.dim[2], step=division_amounty))]
+    nothing::Nothing
 end
 
 function gridlabels!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
@@ -349,7 +350,7 @@ con = context(100, 100) do con::Context
 end
 ```
 """
-function bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
+function bars!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, styles::Pair{String, <:Any} ...; ymax::Number = maximum(y), 
     ymin::Number = minimum(y))
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
@@ -509,7 +510,7 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
         positionx -= scaler
     end
     positiony::Int64 = Int64(round(con.dim[2] / 2)) + con.margin[2]
-    scaler::Int64 = Int64(round(con.dim[2] * .20))
+    scaler = Int64(round(con.dim[2] * .20))
     if contains(align, "top")
         positiony -= scaler
     elseif contains(align, "bottom")
@@ -517,7 +518,7 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
     end
     ww::Int64 = Int64(round(con.dim[1]) * .20)
     hh::Int64 = length(names) * 20
-    legbox::Component{:rec} = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
+    legbox::Component{:rect} = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
     width = ww, height = hh)
     style!(legbox, styles ...)
     push!(legg, legbox)
@@ -568,7 +569,7 @@ end
 function append_legend!(con::AbstractContext, name::String, samp::Component{<:Any}; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
     legend::Component{:g} = con["legend"]
     n_features::Int64 = length(legend[:children]) - 1
-    box::Component{:rec} = legend[:children]["legendbg"]
+    box::Component{:rect} = legend[:children]["legendbg"]
     positionx, positiony = box[:x], box[:y] + (sample_height + 1) * n_features
     box[:height] += 20
     sample_width = 20
