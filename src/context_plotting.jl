@@ -13,7 +13,7 @@ function text!(con::AbstractContext, x::Number, y::Number, text::String, styles:
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => 13pt)
     end
-    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
+    t = ToolipsSVG.text(gen_ref(5), x = x, y = y, text = text)
     style!(t, styles ...)
     draw!(con, [t])
     nothing::Nothing
@@ -50,7 +50,7 @@ function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
-    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
+    ln = ToolipsSVG.line(gen_ref(5), x1 = first[1], y1 = first[2],
     x2 = second[1], y2 = second[2])
     style!(ln, styles ...)
     draw!(con, [ln])
@@ -312,7 +312,7 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
    draw!(con, Vector{Servable}([begin
        cx = Int64(round(percvec_x[i] * (con.dim[1] - 1) + con.margin[1]))
        cy = Int64(round(con.dim[2] - percvec_y[i] * (con.dim[2] - 1) + con.margin[2]))
-       c = circle(randstring(), cx = cx, cy = cy, r = r)
+       c = circle(gen_ref(5), cx = cx, cy = cy, r = r)
        style!(c, styles...)
        c
    end for i in 1:length(x)]))
@@ -398,7 +398,7 @@ function bars!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, styl
     block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
-        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)) + con.margin[1],  y = con.dim[2] - scaled_y + con.margin[2], 
+        rct = ToolipsSVG.rect(gen_ref(5), x = Int64(round(n)) + con.margin[1],  y = con.dim[2] - scaled_y + con.margin[2], 
         width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y))
         style!(rct, styles ...)
         n += block_width
@@ -471,7 +471,7 @@ function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:
     block_width = Int64(round(con.dim[2] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
-        rct = ToolipsSVG.rect(randstring(), x = 0, y = n, 
+        rct = ToolipsSVG.rect(gen_ref(5), x = 0, y = n, 
         width = con.dim[1] - (con.dim[1] - scaled_y), height = block_width)
         style!(rct, styles ...)
         n += block_width

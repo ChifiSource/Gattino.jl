@@ -73,8 +73,7 @@ module Gattino
 using ToolipsSVG
 import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape, string
 import ToolipsSVG: position, set_position!, set_size!, style!, set_shape, SVGShape
-import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br
-using Random: randstring
+import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br, gen_ref
 
 include("context_plotting.jl")
 
