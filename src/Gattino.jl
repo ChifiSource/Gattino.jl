@@ -15,7 +15,12 @@ end
 ```
 `Gattino`
 - For more information on creating and editing visualizations, use `?context`.
-###### export list
+###### names
+- **colors** (not exported)
+```julia
+randcolor
+make_gradient
+```
 - **visualizations** (exported)
 ```julia
 # plot   | context plotting equivalent
@@ -73,7 +78,7 @@ module Gattino
 using ToolipsSVG
 import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape, string
 import ToolipsSVG: position, set_position!, set_size!, style!, set_shape, SVGShape
-import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br, gen_ref
+import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br, gen_ref, rgba
 
 include("context_plotting.jl")
 
@@ -99,6 +104,16 @@ function randcolor()
     "#FF3380", "#CCCC00", "#66E64D", "#4D80CC", "#9900B3", 
     "#E64D66", "#4DB380", "#FF4D4D", "#99E6E6", "#6666FF")
     colors[rand(1:length(colors))]::String
+end
+
+make_gradient(base_color::Tuple, len::Int64, scaler::Int64 ...) = begin
+    base = [base_color ...]
+    scaler = [scaler ...]
+    n = length(scaler)
+    [begin
+        [base[e] += scaler[e] for e in 1:n]
+        rgba(base ...)
+    end for e in 1:len]
 end
 
 """
@@ -552,7 +567,7 @@ function hist(features::Any, x::Any = names(features)[1], y::Any = names(feature
     hist(string(x), string(y), features, args ...; keyargs ...)
 end
 
-export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation
+export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation, rgba, s, ms
 export compose, delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!
 export hist, scatter, line
 end # module

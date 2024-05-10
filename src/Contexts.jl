@@ -411,7 +411,18 @@ Animates the layer `layer` with the animation `animation`.
 
 ```
 """
-function animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames)
+function style!(con::AbstractContext, layer::String, a::ToolipsSVG.ToolipsServables.AbstractAnimation)
+    layer::Component{<:Any} = con.window[:children][layer]
+    if length(layer[:children]) > 1
+        [style!(child, a) for child in layer[:children]]
+    end
+    style!(layer, a)
+    if ~(a.name in con.window[:extras])
+        push!(con.window[:extras], a)
+    end
+end
+
+function animate!(f::Function, con::AbstractContext, layer::String)
 
 end
 
@@ -553,14 +564,14 @@ end
 """
 ```julia
 set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, 
-vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"]) -> ::Nothing
+vec::Vector{<:Number}, colors::Vector{String} = make_gradient((1, 100, 120), 10, 30, 10, -10)) -> ::Nothing
 ```
 `set_gradient!` is used to display new values with a gradient between different colors with `open_layer!`.
 ```example
 
 ```
 """
-function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
+function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = make_gradient((1, 100, 120), 10, 30, 10, -10))
     maxval::Number = maximum(vec)
     divisions = length(colors)
     div_amount = floor(maxval / divisions)
