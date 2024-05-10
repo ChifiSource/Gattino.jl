@@ -174,7 +174,7 @@ mutable struct Context <: AbstractContext
     dim::Pair{Int64, Int64}
     margin::Pair{Int64, Int64}
     Context(wind::Component{:svg}, margin::Pair{Int64, Int64}) = begin
-        new(wind, randstring(), wind[:width] => wind[:height],
+        new(wind, gen_ref(5), wind[:width] => wind[:height],
             margin)::Context
     end
     Context(width::Int64 = 1280, height::Int64 = 720,
@@ -316,7 +316,7 @@ are used to create scaling with `group` and create layers with `group!`.
 ------------------
 ##### constructors
 ```julia
-Group(name::String = randstring(), width::Int64 = 1280, height::Int64 = 720,
+Group(name::String = gen_ref(5), width::Int64 = 1280, height::Int64 = 720,
         margin::Pair{Int64, Int64} = 0 => 0)
 ```
 """
@@ -325,7 +325,7 @@ mutable struct Group <: AbstractContext
     uuid::String
     dim::Pair{Int64, Int64}
     margin::Pair{Int64, Int64}
-    Group(name::String = randstring(), width::Int64 = 1280, height::Int64 = 720,
+    Group(name::String = gen_ref(5), width::Int64 = 1280, height::Int64 = 720,
         margin::Pair{Int64, Int64} = 0 => 0) = begin
         window::Component{:g} = ToolipsSVG.g("$name", width = width, height = height)
         new(window, name, width => height, margin)

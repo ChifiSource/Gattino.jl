@@ -9,11 +9,11 @@ Draws `text` with the text `text` and the styles `styles` at (`x`, `y`) on a `Co
 
 ```
 """
-function text!(con::AbstractContext, x::Int64, y::Int64, text::String, styles::Pair{String, <:Any} ...)
+function text!(con::AbstractContext, x::Number, y::Number, text::String, styles::Pair{String, <:Any} ...)
     if length(styles) == 0
         styles = ("fill" => "black", "font-size" => 13pt)
     end
-    t = ToolipsSVG.text(randstring(), x = x, y = y, text = text)
+    t = ToolipsSVG.text(gen_ref(5), x = x, y = y, text = text)
     style!(t, styles ...)
     draw!(con, [t])
     nothing::Nothing
@@ -50,7 +50,7 @@ function line!(con::AbstractContext, first::Pair{<:Number, <:Number},
     if length(styles) == 0
         styles = ("fill" => "none", "stroke" => "black", "stroke-width" => "4")
     end
-    ln = ToolipsSVG.line(randstring(), x1 = first[1], y1 = first[2],
+    ln = ToolipsSVG.line(gen_ref(5), x1 = first[1], y1 = first[2],
     x2 = second[1], y2 = second[2])
     style!(ln, styles ...)
     draw!(con, [ln])
@@ -67,13 +67,13 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
     numeric_x = [e for e in 1:length(x)]
     xmax::Number = maximum(numeric_x)
     percvec_x = map(n::Number -> n / xmax, numeric_x)
-    percvec_y = map(n::Number -> n / ymax, y)
+    percvec_y = map(n::Number -> (n - ymin) / (ymax - ymin), y)
     line_data = join([begin
                     scaled_x::Int64 = round(con.dim[1] * xper)  + con.margin[1]
                     scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
                     "$(scaled_x)&#32;$(scaled_y),"
                 end for (xper, yper) in zip(percvec_x, percvec_y)])
-    line_comp = ToolipsSVG.polyline("newline", points = line_data)
+    line_comp = ToolipsSVG.polyline("newline", points = line_data[1:length(line_data) - 1])
     style!(line_comp, styles ...)
     draw!(con, [line_comp])
     nothing::Nothing
@@ -81,7 +81,6 @@ end
 
 function line!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number},
     styles::Pair{String, <:Any} ...; kwargs ...)
-
     line!(con, [string(d) for d in x], y, styles ...; kwargs ...)
 end
 
@@ -101,7 +100,7 @@ function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
                 scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
                 "$(scaled_x)&#32;$(scaled_y),"
             end for (xper, yper) in zip(percvec_x, percvec_y)])
-    line_comp = ToolipsSVG.polyline("newline", points = line_data)
+    line_comp = ToolipsSVG.polyline("newline", points = line_data[1:length(line_data) - 1])
     style!(line_comp, styles ...)
     draw!(con, [line_comp])
 end
@@ -244,6 +243,48 @@ function grid!(con::AbstractContext, n::Int64 = 4, styles::Pair{String, <:Any} .
     step = division_amountx), range(1, con.dim[2], step = division_amounty))]
 end
 
+"""
+```julia
+labeled_grid!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, 
+        xlabels::Vector{<:Number}, ylabels::Vector{<:Number}, styles::Pair{String, <:Any} ...;
+        ymax::Number = maximum(y), ymin::Number = minimum(y), xmax::Number = maximum(x), xmin::Number = minimum(x))
+    percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x) -> ::Nothing
+```
+`labeled_grid!` is a `grid!` + `gridlabels!` alternative that works slightly differently. 
+Rather than a number of divisions provided, the specific numbers to create divisions are provided.
+```example
+x = [30, 20, 80, 10]
+y = [8, 16, 12, 11]
+mycon x = [30, 20, 80, 10]
+y = [8, 16, 12, 11]
+mycon = context(500, 500) do con::Context
+    Gattino.labeled_grid!(con, x, y, [20, 40, 90], [10, 20, 30], xmin = 0, xmax = 100, ymin = 0, ymax = 40)
+    Gattino.points!(con, x, y, xmin = 0, xmax = 100, ymin = 0, ymax = 40)
+end
+```
+"""
+function labeled_grid!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, 
+        xlabels::Vector{<:Number}, ylabels::Vector{<:Number}, styles::Pair{String, <:Any} ...;
+        ymax::Number = maximum(y), ymin::Number = minimum(y), xmax::Number = maximum(x), xmin::Number = minimum(x))
+    percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x)
+    mx::Number, my::Number = con.margin[1], con.margin[2]
+    x_offset = Int64(round(length(x) * 0.75))
+    y_offset = Int64(round(length(y) * 0.10))
+    # y is reversed
+    yat::Int64 = length(ylabels)
+    [begin
+        xnum = (xnumlabel - xmin) / (xmax - xmin) * con.dim[1]
+        ynum = (ynumlabel - ymin) / (ymax - ymin) * con.dim[2]
+        # x lines
+        line!(con, xnum + mx => 0 + my, xnum + mx => con.dim[2] + my, styles ...)
+        # y lines
+        line!(con, 0 + mx => ynum + my, con.dim[1] + mx => ynum + my, styles ...)
+        # labels
+        text!(con, 0 + mx, ynum + my - y_offset, string(ylabels[yat]), styles ...)
+        text!(con, xnum + mx, con.dim[2] - 10 + my, string(xnumlabel), styles...)
+        yat -= 1
+    end for (xnumlabel, ynumlabel) in zip(xlabels, ylabels)]
+end
 
 """
 ```julia
@@ -271,7 +312,7 @@ function points!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
    draw!(con, Vector{Servable}([begin
        cx = Int64(round(percvec_x[i] * (con.dim[1] - 1) + con.margin[1]))
        cy = Int64(round(con.dim[2] - percvec_y[i] * (con.dim[2] - 1) + con.margin[2]))
-       c = circle(randstring(), cx = cx, cy = cy, r = r)
+       c = circle(gen_ref(5), cx = cx, cy = cy, r = r)
        style!(c, styles...)
        c
    end for i in 1:length(x)]))
@@ -357,7 +398,7 @@ function bars!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, styl
     block_width = Int64(round(con.dim[1] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
-        rct = ToolipsSVG.rect(randstring(), x = Int64(round(n)) + con.margin[1],  y = con.dim[2] - scaled_y + con.margin[2], 
+        rct = ToolipsSVG.rect(gen_ref(5), x = Int64(round(n)) + con.margin[1],  y = con.dim[2] - scaled_y + con.margin[2], 
         width = block_width, height = con.dim[2] - (con.dim[2] - scaled_y))
         style!(rct, styles ...)
         n += block_width
@@ -430,7 +471,7 @@ function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:
     block_width = Int64(round(con.dim[2] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
-        rct = ToolipsSVG.rect(randstring(), x = 0, y = n, 
+        rct = ToolipsSVG.rect(gen_ref(5), x = 0, y = n, 
         width = con.dim[1] - (con.dim[1] - scaled_y), height = block_width)
         style!(rct, styles ...)
         n += block_width
@@ -519,9 +560,9 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
     style!(legbox, styles ...)
     push!(legg, legbox)
     [begin
-        samp = con.window[:children][name][:children][1]
+        samp = make_legend_preview(copy(con.window[:children][name][:children][1]), 
+        positionx + sample_margin, positiony + sample_margin * e)
         samp.name = "$(name)-preview"
-        set_position!(samp, positionx + sample_margin, positiony + sample_margin * e)
         samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * e * 1.15),
         text = name)
         style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
@@ -533,7 +574,7 @@ end
 
 """
 ```julia
-append_legend!(con::AbstractContext, name::String, args ...; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+append_legend!(con::AbstractContext, name::String, args ...; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12) -> ::Nothing
 ```
 Builds a new legend box on `con`, adding a sample of each layer presented in `names`. New elements, including custom elements, 
 can be appended using `append_legend!`. Legend elements can be removed with `remove_legend!`.
@@ -552,9 +593,8 @@ function append_legend!(con::AbstractContext, name::String; sample_width::Number
     n_features::Int64 = length(legend[:children]) - 1
     box::Component{:rect} = legend[:children]["legendbg"]
     positionx, positiony = box[:x], box[:y]
-    samp = con.window[:children][name][:children][1]
+    samp = make_legend_preview(copy(con.window[:children][name][:children][1]), positionx + sample_margin, positiony + sample_margin * (n_features))
     box[:height] += 20
-    set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
     samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
@@ -583,7 +623,7 @@ end
 
 """
 ```julia
-remove_legend!(con::AbstractContext, name::String)
+remove_legend!(con::AbstractContext, name::String) -> ::Nothing
 ```
 Removes a legend element by layer `name`.
 ```example
@@ -607,4 +647,25 @@ function remove_legend!(con::AbstractContext, name::String)
     pos = findfirst(comp -> comp.name == name, legendcs)
     deleteat!(legendcs, pos); deleteat!(legendcs, pos + 1)
     nothing::Nothing
+end
+
+"""
+```julia
+make_legend_preview(comp::Component{<:Any}, x::Number, y::Number)
+```
+Generates a legend preview at `x` and `y` for the type of `Component` in `comp`. 
+The method you are currently viewing documentation for (`Component{<:Any}`) is the 
+catch-all, which will use `ToolipsSVG.set_position!`. `Gattino` provides(/needs) one other 
+method for this, and this is for the `Component{:polyline}`. This is mainly used on the back-end by 
+`append_legend!` and `legend!`
+"""
+function make_legend_preview(comp::Component{<:Any}, x::Number, y::Number)
+    set_position!(comp, x, y)
+    comp::Component{<:Any}
+end
+
+
+function make_legend_preview(comp::Component{:polyline}, x::Number, y::Number)
+    comp.properties[:points] = "$(x - 5)&#32;$(y),$(x + 10)&#32;$(y),"
+    comp::Component{:polyline}
 end

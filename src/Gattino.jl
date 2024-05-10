@@ -16,29 +16,64 @@ end
 `Gattino`
 - For more information on creating and editing visualizations, use `?context`.
 ###### export list
-- **visualizations**
+- **visualizations** (exported)
 ```julia
 # plot   | context plotting equivalent
 scatter #| scatter_plot!
 line    #| line_plot!
 hist    #| hist_plot!
 ```
-- **contexts**
+- **contexts** (exported)
 ```julia
+AbstractContext
+compose
+vcat(comp::AbstractContext, cons::AbstractContext ...)
+hcat(comp::AbstractContext, cons::AbstractContext ...)
+vcat(comp::Component{:div}, cons::AbstractContext ...)
+hcat(comp::Component{:div}, cons::AbstractContext ...)
+Context
+context
+layers
+draw!
+Group
+group
+group!
+style!(con::AbstractContext, s::String, spairs::Pair{String, String} ...)
+ToolipsServables.animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames)
+merge!(c::AbstractContext, c2::AbstractContext)
+delete_layer!
+rename_layer!
+move_layer!
+set_shape!
+open_layer!
+set!
+set_gradient!
+style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
 ```
-- **context plotting**
+- **context plotting** (not exported)
 ```julia
-```
-- **context drawing**
-```julia
+text!
+line!
+gridlabels!
+grid!
+labeled_grid!
+points!
+axes!
+axislabels!
+bars!
+barlabels!
+v_bars!
+v_barlabels!
+legend!
+append_legend!
+make_legend_preview
 ```
 """
 module Gattino
 using ToolipsSVG
 import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape, string
 import ToolipsSVG: position, set_position!, set_size!, style!, set_shape, SVGShape
-import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br
-using Random: randstring
+import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br, gen_ref
 
 include("context_plotting.jl")
 
@@ -278,7 +313,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         end
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
-                line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
+                line!(g, x, feature[2], "stroke" => colors[e], "stroke-width" => 3px, "fill" => "none", xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
             end
             string(feature[1])::String
         end for (e, feature) in enumerate(features)]
@@ -292,6 +327,29 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         legend!(con, lbls)
     end
     con::AbstractContext
+end
+
+"""
+```julia
+plot_margins(f::Function, con::AbstractContext) -> ::Group
+```
+---
+Will draw the changes in `f` into the default plot margins `Gattino` calculates 
+for `con`. This does some scaling math to determine the optimal size for the plot 
+    depending on the size of the window.
+```julia
+mycon = context() do con::Context
+    scatter_plot!(con, [1, 2, 3], [1, 2, 3], ymax = 6, ymin = 0, xmax = 6, xmin = 0, title = "my plot")
+    plot_margins(con) do g::Group
+        # we are now back to the same scaling our scatter plot is on (because we provided `title`).
+    end
+end
+```
+"""
+plot_margins(f::Function, con::AbstractContext) = begin
+    w::Int64, h::Int64 = Int64(round(con.dim[1] * .75)), Int64(round(con.dim[2] * .75))
+    ml::Int64, mt::Int64 = Int64(round(con.dim[1] * .12)) + con.margin[1], Int64(round(con.dim[2] * .12)) + con.margin[2]
+    group(f, con, w, h, ml => mt)
 end
 
 function line_plot!(con::AbstractContext, x::Vector{<:Any}, y::Vector{<:Number}, features::Pair{String, <:AbstractVector} ...; divisions::Int64 = length(x), title::String = "", 
