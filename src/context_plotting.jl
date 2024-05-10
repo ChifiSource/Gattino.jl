@@ -73,7 +73,7 @@ function line!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:Nu
                     scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
                     "$(scaled_x)&#32;$(scaled_y),"
                 end for (xper, yper) in zip(percvec_x, percvec_y)])
-    line_comp = ToolipsSVG.polyline("newline", points = line_data)
+    line_comp = ToolipsSVG.polyline("newline", points = line_data[1:length(line_data) - 1])
     style!(line_comp, styles ...)
     draw!(con, [line_comp])
     nothing::Nothing
@@ -100,7 +100,7 @@ function line!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number},
                 scaled_y::Int64 = con.dim[2] - round(con.dim[2] * yper)  + con.margin[2]
                 "$(scaled_x)&#32;$(scaled_y),"
             end for (xper, yper) in zip(percvec_x, percvec_y)])
-    line_comp = ToolipsSVG.polyline("newline", points = line_data)
+    line_comp = ToolipsSVG.polyline("newline", points = line_data[1:length(line_data) - 1])
     style!(line_comp, styles ...)
     draw!(con, [line_comp])
 end
@@ -560,9 +560,9 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
     style!(legbox, styles ...)
     push!(legg, legbox)
     [begin
-        samp = con.window[:children][name][:children][1]
+        samp = make_legend_preview(copy(con.window[:children][name][:children][1]), 
+        positionx + sample_margin, positiony + sample_margin * e)
         samp.name = "$(name)-preview"
-        set_position!(samp, positionx + sample_margin, positiony + sample_margin * e)
         samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * e * 1.15),
         text = name)
         style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
@@ -593,9 +593,8 @@ function append_legend!(con::AbstractContext, name::String; sample_width::Number
     n_features::Int64 = length(legend[:children]) - 1
     box::Component{:rect} = legend[:children]["legendbg"]
     positionx, positiony = box[:x], box[:y]
-    samp = con.window[:children][name][:children][1]
+    samp = make_legend_preview(copy(con.window[:children][name][:children][1]), positionx + sample_margin, positiony + sample_margin * (n_features))
     box[:height] += 20
-    set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
     samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
@@ -648,4 +647,15 @@ function remove_legend!(con::AbstractContext, name::String)
     pos = findfirst(comp -> comp.name == name, legendcs)
     deleteat!(legendcs, pos); deleteat!(legendcs, pos + 1)
     nothing::Nothing
+end
+
+function make_legend_preview(comp::Component{<:Any}, x::Number, y::Number)
+    set_position!(comp, x, y)
+    comp::Component{<:Any}
+end
+
+
+function make_legend_preview(comp::Component{:polyline}, x::Number, y::Number)
+    comp.properties[:points] = "$(x - 5)&#32;$(y),$(x + 10)&#32;$(y),"
+    comp::Component{:polyline}
 end

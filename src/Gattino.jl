@@ -16,14 +16,14 @@ end
 `Gattino`
 - For more information on creating and editing visualizations, use `?context`.
 ###### export list
-- **visualizations**
+- **visualizations** (exported)
 ```julia
 # plot   | context plotting equivalent
 scatter #| scatter_plot!
 line    #| line_plot!
 hist    #| hist_plot!
 ```
-- **contexts**
+- **contexts** (exported)
 ```julia
 AbstractContext
 compose
@@ -50,7 +50,7 @@ set!
 set_gradient!
 style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
 ```
-- **context plotting**
+- **context plotting** (not exported)
 ```julia
 text!
 line!
@@ -66,6 +66,7 @@ v_bars!
 v_barlabels!
 legend!
 append_legend!
+make_legend_preview
 ```
 """
 module Gattino
@@ -313,7 +314,7 @@ function line_plot!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Numbe
         end
         lbls = [begin
             group!(plotgroup, feature[1]) do g::Group
-                line!(g, x, feature[2], "fill" => colors[e], xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
+                line!(g, x, feature[2], "stroke" => colors[e], "stroke-width" => 3px, "fill" => "none", xmax = xmax, ymax = ymax, xmin = xmin, ymin = ymin)
             end
             string(feature[1])::String
         end for (e, feature) in enumerate(features)]
