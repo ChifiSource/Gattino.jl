@@ -574,7 +574,7 @@ end
 
 """
 ```julia
-append_legend!(con::AbstractContext, name::String, args ...; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+append_legend!(con::AbstractContext, name::String, args ...; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12) -> ::Nothing
 ```
 Builds a new legend box on `con`, adding a sample of each layer presented in `names`. New elements, including custom elements, 
 can be appended using `append_legend!`. Legend elements can be removed with `remove_legend!`.
@@ -623,7 +623,7 @@ end
 
 """
 ```julia
-remove_legend!(con::AbstractContext, name::String)
+remove_legend!(con::AbstractContext, name::String) -> ::Nothing
 ```
 Removes a legend element by layer `name`.
 ```example
@@ -649,6 +649,16 @@ function remove_legend!(con::AbstractContext, name::String)
     nothing::Nothing
 end
 
+"""
+```julia
+make_legend_preview(comp::Component{<:Any}, x::Number, y::Number)
+```
+Generates a legend preview at `x` and `y` for the type of `Component` in `comp`. 
+The method you are currently viewing documentation for (`Component{<:Any}`) is the 
+catch-all, which will use `ToolipsSVG.set_position!`. `Gattino` provides(/needs) one other 
+method for this, and this is for the `Component{:polyline}`. This is mainly used on the back-end by 
+`append_legend!` and `legend!`
+"""
 function make_legend_preview(comp::Component{<:Any}, x::Number, y::Number)
     set_position!(comp, x, y)
     comp::Component{<:Any}
