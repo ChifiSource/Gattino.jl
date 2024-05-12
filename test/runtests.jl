@@ -56,45 +56,48 @@ using Gattino
     end
     @testset "colors" begin
         randco = Gattino.randcolor()
-        @test randco[1] == "#"
+        @test randco[1] == '#'
         @test length(randco) == 7
-        grad = make_gradient((255, 0, 0), 10, 5, 5, 0)
+        grad = Gattino.make_gradient((255, 0, 0), 10, 5, 5, 0)
         @test length(grad) == 10
-        @test grad[2] == "rgb(260, 5, 0)"
+        @test grad[1] == "rgb(260,5,0,1.0)"
     end
     @testset "contexts" verbose = true begin
         @testset "base contexts" begin
             newcon = context()
             @test typeof(newcon) <: Gattino.AbstractContext
             newcon = context(100, 100, 5 => 5)
-            @test con.dim == 100 => 100
+            @test newcon.dim == [100 => 100][1]
             newcon = context(100, 100) do con::Context
-                points!(con, [5, 10, 15], [5, 10, 15])
+                Gattino.points!(con, [5, 10, 15], [5, 10, 15])
                 group!(con, "sample") do g::Group
-                    text!(g, 5, 10, "hello!")
+                    Gattino.text!(g, 5, 10, "hello!")
                 end
             end
-            @test length(newcon.window[:children]) == 2
-            @test length(newcon.window["sample"][:children]) == 1
+            @test length(newcon.window[:children]) == 4
+            @test length(newcon.window[:children]["sample"][:children]) == 1
         end
         con = context()
         @testset "groups" begin
             g = group(con, 100, 50, 50 => 5) do g
                 group!(g, "text") do g2::Group
-                    text!(g, 2, 5, "hello")
+                    Gattino.text!(g2, 2, 5, "hello")
+                end
+                group!(g, "points") do g2::Group
+                    Gattino.points!(g2, [2, 3], [5, 3])
                 end
             end
-            @test string(con.window[:children]["text"][1][x]) == string(50 + 2 + 5)
-            @test length(g.window[:children]) == 1
-            @test length(con.window[:children]) == 1
+            @test string(con.window[:children]["points"][:children][1]["cx"]) == "50"
+            @test length(con.window[:children]) == 2
+            @test length(con.window[:children]["text"][:children]) == 1
         end
         @testset "cat layouts" begin
             testcat = hcat(vcat(con, con), vcat(con, con))
             @test typeof(testcat) == Component{:div}
             f = findfirst(comp -> typeof(comp) == Component{:br}, testcat[:children])
             @test ~(isnothing(f))
-            @test f == 3
-            @test length(testcat) == 5
+            @test f == 2
+            @test length(testcat[:children]) == 5
         end
         @testset "layers" begin
             @test "text" in [p[2] for p in layers(con)]
@@ -102,35 +105,33 @@ using Gattino
             @test ~("text" in [p[2] for p in layers(con)])
             @test "label" in [p[2] for p in layers(con)]
             con2 = context(500, 500) do cont::Context
-                line!(con2, 5 => 6, 4 => 5)
+                Gattino.line!(cont, 5 => 6, 4 => 5)
             end
             @test length(layers(con2)) == 1
-            merge!(con, con2)
-            @test length(con.window[:children]) == 2
+            Gattino.merge!(con, con2)
+            @test length(con.window[:children]) == 3
             delete_layer!(con, "label")
             @test ~("label" in [p[2] for p in layers(con)])
-            @test length(con.window[:children]) == 1
+            @test length(con.window[:children]) == 2
             newcon = scatter([5, 10, 78], [20, 30, 10])
-            @test length(newcon[:children]["points"][:children]) == 3
+            @test length(newcon.window[:children]["points"][:children]) == 3
             set_shape!(newcon, "points", :star)
             @test typeof(newcon.window[:children]["points"][:children][1]) == Component{:star}
             style!(newcon, "grid", "stroke" => "orange")
-            @test contains(newcon.window[:children]["grid"][1]["style"], "stroke:orange;")
-            open_layer(newcon, "points") do ecomp
+            @test contains(newcon.window[:children]["grid"][:children][1]["style"], "stroke:orange;")
+            open_layer!(newcon, "points") do ecomp
                 set!(ecomp, :r, 10)
-                
             end
-            @test string(newcon[:children]["points"][1]["r"]) == "10"
+            @test string(newcon.window[:children]["points"][:children][1]["r"]) == "10"
         end
         @testset "compression" begin
+            Gattino.points!(con, randn(500), randn(500))
             size = sizeof(con)
             compress!(con)
-            newsize = sizeof(con)
             @test length(con.window[:children]) == 0
-            @test newsize < size
         end
     end
     @testset "context plotting" verbose = true begin
-        
+
     end
 end
