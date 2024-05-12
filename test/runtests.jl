@@ -54,8 +54,18 @@ using Gattino
             @test "grid" in lays
         end
     end
+    @testset "colors" begin
+        randco = Gattino.randcolor()
+        @test randco[1] == "#"
+        @test length(randco) == 7
+        grad = make_gradient((255, 0, 0), 10, 5, 5, 0)
+        @test length(grad) == 10
+        @test grad[2] == "rgb(260, 5, 0)"
+    end
     @testset "contexts" verbose = true begin
-
+        newcon = context()
+        @test typeof(newcon) <: Gattino.AbstractContext
+        
     end
     @testset "context plotting" verbose = true begin
 
