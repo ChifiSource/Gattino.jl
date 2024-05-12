@@ -120,7 +120,7 @@ using Gattino
 colors = Gattino.make_gradient((1, 100, 120), 10, 30, 10, -10)
 circs = []
 for e in 1:length(colors)
-        circy = Gattino.circle("$e", cx = 5 + (6 * e), cy = 50, r = 5)
+        circy = Gattino.circle("\$e", cx = 5 + (6 * e), cy = 50, r = 5)
         style!(circy, "fill" => colors[e])
         push!(circs, circy)
 end

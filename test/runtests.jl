@@ -132,6 +132,44 @@ using Gattino
         end
     end
     @testset "context plotting" verbose = true begin
+        newcon = context() do con::Context
+            group!(con, "layer1") do g::Group
+                Gattino.text!(g, 5, 5, "tests", "fill" => "white")
+                Gattino.line!(g, 5 => 5, 5 => 10)
+            end
+            group!(con, "scaledl") do g::Group
+                Gattino.line!(g, [5, 10, 15], [5, 10, 15])
+                Gattino.line!(g, ['c', 'd', 'a'], [5, 10, 15])
+            end
+            group!(con, "grid") do g::Group
+                Gattino.grid!(g, 4)
+                Gattino.gridlabels!(g, [5, 10, 15], [5, 10, 15], 4)
+            end
+            Gattino.labeled_grid!(con, [5, 10, 15], [5, 10, 15], [10], [10])
+            group!(con, "points2") do g::Group
+                Gattino.points!(g, randn(100), randn(100))
+            end
+            group!(con, "back") do g::Group
+                axislabels!(g, "hello", "world")
+                axes!(g)
+            end
+            group!(con, "bars") do g::Group
+                Gattino.hist_plot!(g, [5, 10, 15], [32, 26, 23])
+            end
+            group!(con, "moreplots") do g::Group
+                Gattino.scatter_plot!(g, [5, 10, 15], [5, 10, 11])
+                Gattino.line_plot!(g, ["h", "o", "a", "a"], [5, 20, 11, 8])
+            end
+        end
+        @testset "line and text annotations" begin
+            @test length(con.window[:children]["layer1"][:children]) == 2
+            @test con.window[:children]["layer1"][:children][1]["text"] == "tests"
+        end
+        @testset "grid" begin
+            @test length(con.window[:children]["grid"]) == 16
+        end
+        @testset "feature plotting (points, bars, line!)" begin
 
+        end
     end
 end

@@ -29,7 +29,7 @@ Creates a new `:div` for `comp` and concatenates all provided `cons` vertically.
 ```
 """
 function vcat(comp::AbstractContext, cons::AbstractContext ...)
-    newdiv = div(randstring(3))
+    newdiv = div(gen_ref(3))
     style!(comp.window, "display" => "inline-block")
     push!(newdiv, comp.window)
     push!(newdiv, br())
@@ -51,14 +51,14 @@ Creates a new `:div` for `comp` and concatenates all provided `cons` horizontall
 ```
 """
 function hcat(comp::AbstractContext, cons::AbstractContext ...)
-    newdiv = div(randstring(3))
+    newdiv = div(gen_ref(3))
     style!(comp.window, "display" => "inline-block")
     push!(newdiv, comp.window)
     [begin
         style!(co.window, "display" => "inline-block")
         push!(newdiv, co.window)
     end for co in cons]
-    newdiv
+    newdiv::Component{:div}
 end
 
 """
@@ -77,7 +77,7 @@ function vcat(comp::Component{:div}, cons::AbstractContext ...)
     style!(con.window, "display" => "inline-block")
     push!(comp[:children], con.window)
     end for con in cons]
-    comp
+    comp::Component{:div}
 end
 
 """
@@ -97,6 +97,26 @@ function hcat(comp::Component{:div}, cons::AbstractContext ...)
     end for con in cons]
     comp
 end
+
+function vcat(comp::Component{:div}, cons::Component{:div} ...)
+    push!(comp, br())
+    [begin 
+        style!(con, "display" => "inline-block")
+        push!(comp[:children], con)
+    end for con in cons]
+    comp::Component{:div}
+end
+
+
+function hcat(comp::Component{:div}, cons::Component{:div} ...)
+    push!(comp, br())
+    [begin 
+        style!(con, "display" => "inline-block")
+        push!(comp[:children], con)
+    end for con in cons]
+    comp::Component{:div}
+end
+
 
 push!(comp::Component{:div}, cons::AbstractContext ...) = hcat(comp, cons ...)
 
@@ -209,12 +229,15 @@ con = context(500, 500) do con::Context
 end
 ```
 """
-function context(f::Function = c::Context -> c::Context, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
+function context(f::Function, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
     con::Context = Context(width, height, margin)
     f(con)
     con::Context
 end
 
+context(width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0) = begin
+    context(c::Context -> c::Context, width, height, margin)
+end
 """
 ```julia
 context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1) -> ::Context
