@@ -132,7 +132,7 @@ using Gattino
         end
     end
     @testset "context plotting" verbose = true begin
-        newcon = context() do con::Context
+        con = context() do con::Context
             group!(con, "layer1") do g::Group
                 Gattino.text!(g, 5, 5, "tests", "fill" => "white")
                 Gattino.line!(g, 5 => 5, 5 => 10)
@@ -150,8 +150,8 @@ using Gattino
                 Gattino.points!(g, randn(100), randn(100))
             end
             group!(con, "back") do g::Group
-                axislabels!(g, "hello", "world")
-                axes!(g)
+                Gattino.axislabels!(g, "hello", "world")
+                Gattino.axes!(g)
             end
             group!(con, "bars") do g::Group
                 Gattino.hist_plot!(g, [5, 10, 15], [32, 26, 23])
@@ -166,10 +166,13 @@ using Gattino
             @test con.window[:children]["layer1"][:children][1]["text"] == "tests"
         end
         @testset "grid" begin
-            @test length(con.window[:children]["grid"]) == 16
+            @test length(con.window[:children]["grid"][:children]) == 16
         end
-        @testset "feature plotting (points, bars, line!)" begin
-
+        @testset "feature plotting (points!, bars!)" begin
+            @test length(con.window[:children]["scaledl"][:children]) == 2
+            @test length(con.window[:children]["points2"][:children]) == 100
+            @test length(con.window[:children]["back"][:children]) == 4
+            @test length(con.window[:children]["bars"][:children]) == 5
         end
     end
 end
