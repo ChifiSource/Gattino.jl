@@ -31,7 +31,6 @@ hist    #| hist_plot!
 - **contexts** (exported)
 ```julia
 AbstractContext
-compose
 vcat(comp::AbstractContext, cons::AbstractContext ...)
 hcat(comp::AbstractContext, cons::AbstractContext ...)
 vcat(comp::Component{:div}, cons::AbstractContext ...)
@@ -54,6 +53,7 @@ open_layer!
 set!
 set_gradient!
 style!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.AbstractComponent}, vec::Vector{<:Number}, stylep::Pair{String, Int64} ...)
+compress!
 ```
 - **context plotting** (not exported)
 ```julia
@@ -106,14 +106,35 @@ function randcolor()
     colors[rand(1:length(colors))]::String
 end
 
+"""
+```julia
+make_gradient(base_color::Tuple, len::Int64, scaler::Int64 ...) -> ::Vector{String}
+```
+Creates a gradient of colors inside of a `Vector{String}` from `base_color` -- an `rgb` color. 
+`len` will be the number of colors in the resulting `Vector`. `scaler` is the values to scale the `base_color` by.
+
+For example providing `5` as the scaler will scale red by `5` for each color. Providing `5, 10, 15` will scale 
+red by `5`, green by `10`, and blue by `15`.
+```example
+using Gattino
+colors = Gattino.make_gradient((1, 100, 120), 10, 30, 10, -10)
+circs = []
+for e in 1:length(colors)
+        circy = Gattino.circle("$e", cx = 5 + (6 * e), cy = 50, r = 5)
+        style!(circy, "fill" => colors[e])
+        push!(circs, circy)
+end
+Gattino.svg(width = 200, height = 100, children = Vector{Gattino.ToolipsSVG.AbstractComponent}(circs))
+```
+"""
 make_gradient(base_color::Tuple, len::Int64, scaler::Int64 ...) = begin
-    base = [base_color ...]
-    scaler = [scaler ...]
-    n = length(scaler)
+    base::Vector = [base_color ...]
+    scaler::Vector = [scaler ...]
+    n::Number = length(scaler)
     [begin
         [base[e] += scaler[e] for e in 1:n]
         rgba(base ...)
-    end for e in 1:len]
+    end for e in 1:len]::Vector{String}
 end
 
 """
@@ -568,6 +589,6 @@ function hist(features::Any, x::Any = names(features)[1], y::Any = names(feature
 end
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation, rgba, s, ms
-export compose, delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!
-export hist, scatter, line
+export delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!, compress!, rename_layer!, move_layer!, on, ClientModifier, transition!, next!, set_text!, set_children!
+export hist, scatter, line, svg, div, Component
 end # module
