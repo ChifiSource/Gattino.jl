@@ -19,44 +19,6 @@ different elements inside of the Context.
 abstract type AbstractContext <: ToolipsSVG.ToolipsServables.Modifier end
 
 """
-####### compositions
-Layouts in `Gattino` can be created using two techniques; scaling and composition. Using scaling 
-will mean that all of the visualizations in our layout are on the same `Context`. Using compositions 
-will mean that our visualizations will sit on seperate contexts beside one another. Scaling is done using 
-margins and dimensions of contexts, whereas compositions are done using `compose`, `vcat`, and `hcat`
-"""
-function compose end
-
-"""
-```julia
-compose(name::String, cons::AbstractContext ...) -> ::Component{:div}
-```
----
-Composes `cons` into a new `Component{:div}` called `name`. Composing is done 
-using either this method, or `vcat`/`hcat`.
-```example
-using Gattino
-
-firstcon = context(50, 50) do con::Context
-    Gattino.text!(con, 25, 25, "hello", "fill" => "black")
-end
-
-secondcon = context(50, 50) do con::Context
-    Gattino.text!(con, 25, 25, "world", "fill" => "black")
-end
-
-finalvis = compose("myframe", firstcon, secondcon)
-```
-"""
-function compose(name::String, cons::AbstractContext ...)
-    newdiv = div(name)
-    newdiv[:children] = Vector{Servable}([begin 
-    style!(con.window, "display" => "inline-block")
-    con.window::Component{<:Any} end for con in cons])
-    newdiv::Component{:div}
-end
-
-"""
 ```julia
 vcat(comp::AbstractContext, cons::AbstractContext ...) -> ::Component{:div}
 ```
@@ -67,7 +29,7 @@ Creates a new `:div` for `comp` and concatenates all provided `cons` vertically.
 ```
 """
 function vcat(comp::AbstractContext, cons::AbstractContext ...)
-    newdiv = div(randstring(3))
+    newdiv = div(gen_ref(3))
     style!(comp.window, "display" => "inline-block")
     push!(newdiv, comp.window)
     push!(newdiv, br())
@@ -89,14 +51,14 @@ Creates a new `:div` for `comp` and concatenates all provided `cons` horizontall
 ```
 """
 function hcat(comp::AbstractContext, cons::AbstractContext ...)
-    newdiv = div(randstring(3))
+    newdiv = div(gen_ref(3))
     style!(comp.window, "display" => "inline-block")
     push!(newdiv, comp.window)
     [begin
         style!(co.window, "display" => "inline-block")
         push!(newdiv, co.window)
     end for co in cons]
-    newdiv
+    newdiv::Component{:div}
 end
 
 """
@@ -115,7 +77,7 @@ function vcat(comp::Component{:div}, cons::AbstractContext ...)
     style!(con.window, "display" => "inline-block")
     push!(comp[:children], con.window)
     end for con in cons]
-    comp
+    comp::Component{:div}
 end
 
 """
@@ -135,6 +97,26 @@ function hcat(comp::Component{:div}, cons::AbstractContext ...)
     end for con in cons]
     comp
 end
+
+function vcat(comp::Component{:div}, cons::Component{:div} ...)
+    push!(comp, br())
+    [begin 
+        style!(con, "display" => "inline-block")
+        push!(comp[:children], con)
+    end for con in cons]
+    comp::Component{:div}
+end
+
+
+function hcat(comp::Component{:div}, cons::Component{:div} ...)
+    push!(comp, br())
+    [begin 
+        style!(con, "display" => "inline-block")
+        push!(comp[:children], con)
+    end for con in cons]
+    comp::Component{:div}
+end
+
 
 push!(comp::Component{:div}, cons::AbstractContext ...) = hcat(comp, cons ...)
 
@@ -170,16 +152,15 @@ display(con)
 """
 mutable struct Context <: AbstractContext
     window::Component{:svg}
-    uuid::String
     dim::Pair{Int64, Int64}
     margin::Pair{Int64, Int64}
     Context(wind::Component{:svg}, margin::Pair{Int64, Int64}) = begin
-        new(wind, gen_ref(5), wind[:width] => wind[:height],
+        new(wind, wind[:width] => wind[:height],
             margin)::Context
     end
     Context(width::Int64 = 1280, height::Int64 = 720,
         margin::Pair{Int64, Int64} = 0 => 0) = begin
-        window::Component{:svg} = svg("window", width = width,
+        window::Component{:svg} = svg(gen_ref(5), width = width,
         height = height)
         Context(window, margin)::Context
     end
@@ -248,12 +229,15 @@ con = context(500, 500) do con::Context
 end
 ```
 """
-function context(f::Function = c::Context -> c::Context, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
+function context(f::Function, width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0)
     con::Context = Context(width, height, margin)
     f(con)
     con::Context
 end
 
+context(width::Int64 = 500, height::Int64= 720, margin::Pair{Int64, Int64} = 0 => 0) = begin
+    context(c::Context -> c::Context, width, height, margin)
+end
 """
 ```julia
 context(f::Function, con::Context, width::Int64 = 1280, height::Int64= 720, margin::Pair{Int64, Int64} = 1 => 1) -> ::Context
@@ -311,7 +295,43 @@ A `Group` is a `Context` which is held beneath another context. These
 are used to create scaling with `group` and create layers with `group!`.
 ##### example
 ```
+using Gattino
+x = ["purple", "pink", "orange", "blue", "red", "white"]
+y = [20, 40, 2, 3, 25, 49]
 
+mycon = context(500, 500) do con::Context
+    group(con, 250, 250) do firstvis::Group
+        group!(firstvis, "axes") do g::Group
+            Gattino.axes!(g)
+        end
+        group!(firstvis, "grid") do g::Group
+            Gattino.grid!(g, 4)
+        end
+        group!(firstvis, "bars") do g::Group
+            Gattino.bars!(g, x, y, "stroke-width" => 1px, "stroke" => "darkgray")
+            [style!(comp, "fill" => color) for (comp, color) in zip(g.window[:children], x)]
+        end
+        group!(firstvis, "labels") do g::Group
+            Gattino.barlabels!(g, x, "stroke-width" => 0px, "font-size" => 11pt)
+        end
+    end
+    group(con, 250, 250, 250 => 0) do secondvis::Group
+        group!(secondvis, "grid2") do g::Group
+            Gattino.grid!(g, 4, "stroke" => "pink")
+        end
+        group!(secondvis, "line") do g::Group
+            Gattino.line!(g, x, y)
+        end
+        group!(secondvis, "labels") do g::Group
+            Gattino.gridlabels!(g, x, y, 4)
+        end
+    end
+    group(con, 500, 250, 0 => 250) do bottomvis::Group
+        group!(bottomvis, "grid3") do g::Group
+            Gattino.scatter_plot!(g, [1, 2, 3], [1, 2, 3])
+        end
+    end
+end
 ```
 ------------------
 ##### constructors
@@ -322,13 +342,12 @@ Group(name::String = gen_ref(5), width::Int64 = 1280, height::Int64 = 720,
 """
 mutable struct Group <: AbstractContext
     window::Component{:g}
-    uuid::String
     dim::Pair{Int64, Int64}
     margin::Pair{Int64, Int64}
     Group(name::String = gen_ref(5), width::Int64 = 1280, height::Int64 = 720,
         margin::Pair{Int64, Int64} = 0 => 0) = begin
-        window::Component{:g} = ToolipsSVG.g("$name", width = width, height = height)
-        new(window, name, width => height, margin)
+        window::Component{:g} = ToolipsSVG.g(name, width = width, height = height)
+        new(window, width => height, margin)
     end
 end
 
@@ -404,15 +423,19 @@ end
 
 """
 ```julia
-animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames) -> ::Nothing
+style!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames) -> ::Nothing
 ```
 Animates the layer `layer` with the animation `animation`.
-```example
-
-```
 """
-function animate!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames)
-
+function style!(con::AbstractContext, layer::String, a::ToolipsSVG.ToolipsServables.AbstractAnimation)
+    layer::Component{<:Any} = con.window[:children][layer]
+    if length(layer[:children]) > 1
+        [style!(child, a) for child in layer[:children]]
+    end
+    style!(layer, a)
+    if ~(a.name in con.window[:extras])
+        push!(con.window[:extras], a)
+    end
 end
 
 """
@@ -553,14 +576,14 @@ end
 """
 ```julia
 set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, 
-vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"]) -> ::Nothing
+vec::Vector{<:Number}, colors::Vector{String} = make_gradient((1, 100, 120), 10, 30, 10, -10)) -> ::Nothing
 ```
 `set_gradient!` is used to display new values with a gradient between different colors with `open_layer!`.
 ```example
 
 ```
 """
-function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = ["#DC1C13", "#EA4C46", "#F07470", "#F1959B", "#F6BDC0"])
+function set_gradient!(ecomp::Pair{Int64, <:ToolipsSVG.ToolipsServables.Servable}, vec::Vector{<:Number}, colors::Vector{String} = make_gradient((1, 100, 120), 10, 30, 10, -10))
     maxval::Number = maximum(vec)
     divisions = length(colors)
     div_amount = floor(maxval / divisions)
@@ -614,4 +637,8 @@ end
 
 function show(io::Base.TTY, con::AbstractContext)
     println(io, "Context ($(con.dim[1]) x $(con.dim[2]))")
+end
+
+function compress!(con::AbstractContext)
+    ToolipsSVG.ToolipsServables.compress!(con.window)::Nothing
 end

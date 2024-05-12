@@ -266,23 +266,19 @@ end
 function labeled_grid!(con::AbstractContext, x::Vector{<:Number}, y::Vector{<:Number}, 
         xlabels::Vector{<:Number}, ylabels::Vector{<:Number}, styles::Pair{String, <:Any} ...;
         ymax::Number = maximum(y), ymin::Number = minimum(y), xmax::Number = maximum(x), xmin::Number = minimum(x))
-    percvec_x::Vector{<:Number} = map(n::Number -> (n - xmin) / (xmax - xmin), x)
     mx::Number, my::Number = con.margin[1], con.margin[2]
-    x_offset = Int64(round(length(x) * 0.75))
-    y_offset = Int64(round(length(y) * 0.10))
-    # y is reversed
-    yat::Int64 = length(ylabels)
+    x_offset = Int64(round(length(x) * 0.85))
+    y_offset = Int64(round(length(y) * 0.12))
     [begin
         xnum = (xnumlabel - xmin) / (xmax - xmin) * con.dim[1]
-        ynum = (ynumlabel - ymin) / (ymax - ymin) * con.dim[2]
+        ynum = con.dim[2] - ((ynumlabel - ymin) / (ymax - ymin) * con.dim[2])
         # x lines
         line!(con, xnum + mx => 0 + my, xnum + mx => con.dim[2] + my, styles ...)
         # y lines
         line!(con, 0 + mx => ynum + my, con.dim[1] + mx => ynum + my, styles ...)
         # labels
-        text!(con, 0 + mx, ynum + my - y_offset, string(ylabels[yat]), styles ...)
+        text!(con, 0 + mx, ynum + my - y_offset, string(ynumlabel), styles ...)
         text!(con, xnum + mx, con.dim[2] - 10 + my, string(xnumlabel), styles...)
-        yat -= 1
     end for (xnumlabel, ynumlabel) in zip(xlabels, ylabels)]
 end
 
