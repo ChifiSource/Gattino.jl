@@ -467,7 +467,7 @@ function v_bars!(con::AbstractContext, x::Vector{<:AbstractString}, y::Vector{<:
     block_width = Int64(round(con.dim[2] / n_features))
     rects = Vector{Servable}([begin
         scaled_y::Number = Int64(round(con.dim[2] * percvec_y[e]))
-        rct = ToolipsSVG.rect(gen_ref(5), x = 0, y = n, 
+        rct = ToolipsSVG.rect(gen_ref(5), x = 0 + con.margin[1], y = n + con.margin[2], 
         width = con.dim[1] - (con.dim[1] - scaled_y), height = block_width)
         style!(rct, styles ...)
         n += block_width
