@@ -586,31 +586,30 @@ append_legend!(con::AbstractContext, name::String, samp::Component{<:Any}; sampl
 """
 function append_legend!(con::AbstractContext, name::String; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
     legend::Component{:g} = con["legend"]
-    n_features::Int64 = length(legend[:children]) - 1
+    n_features::Int64 = length(legend[:children])
     box::Component{:rect} = legend[:children]["legendbg"]
     positionx, positiony = box[:x], box[:y]
     samp = make_legend_preview(copy(con.window[:children][name][:children][1]), positionx + sample_margin, positiony + sample_margin * (n_features))
-    box[:height] += 20
+    box[:height] += sample_height
     samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
     push!(legend, samp, samplabel)
-    nothing::Notihng
+    nothing::Nothing
 end
 
 function append_legend!(con::AbstractContext, name::String, samp::Component{<:Any}; sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
     legend::Component{:g} = con["legend"]
-    n_features::Int64 = length(legend[:children]) - 1
-    box::Component{:rect} = legend[:children]["legendbg"]
+    n_features::Int64 = length(legend[:children])
+    box::Component{:rect} = legend[:children]["legendbg"] 
     positionx, positiony = box[:x], box[:y] + (sample_height + 1) * n_features
-    box[:height] += 20
-    sample_width = 20
+    box[:height] =  sample_height * (n_features + 1)
     if typeof(samp) == Component{:g}
         [set_position!(cmp, positionx + sample_margin * e, positiony + sample_margin * (n_features)) for (e, cmp) in enumerate(samp[:children])]
     else
         set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
     end
-    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin * 2), y = positiony + (sample_margin * (n_features) * 1.15),
+    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + sample_margin, y = positiony + (sample_width * (n_features) * 1.15) + sample_margin,
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
     push!(legend, samp, samplabel)

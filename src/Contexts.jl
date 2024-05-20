@@ -268,6 +268,8 @@ layers(example)
 """
 layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
 
+layers(con::AbstractContext, in::String) = [e => comp.name for (e, comp) in enumerate(con.window[:children][in][:children])]
+
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
 """
