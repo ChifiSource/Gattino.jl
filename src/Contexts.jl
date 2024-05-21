@@ -123,7 +123,6 @@ push!(comp::Component{:div}, cons::AbstractContext ...) = hcat(comp, cons ...)
 """
 ### Context <: AbstractContext
 - window::Component{:svg}
-- uuid::String
 - dim::Int64{Int64, Int64}
 - margin::Pair{Int64, Int64}
 
@@ -268,7 +267,11 @@ layers(example)
 """
 layers(con::AbstractContext) = [e => comp.name for (e, comp) in enumerate(con.window[:children])]
 
+layers(con::AbstractContext, in::String) = [e => comp.name for (e, comp) in enumerate(con.window[:children][in][:children])]
+
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
+
+getindex(con::AbstractContext, symb::Symbol) = con.window[symb]
 
 """
 ```julia
@@ -287,7 +290,6 @@ end
 """
 ### Group <: AbstractContext
 - window::Component{:g}
-- uuid::String
 - dim::Int64{Int64, Int64}
 - margin::Pair{Int64, Int64}
 
@@ -421,6 +423,11 @@ function style!(con::AbstractContext, spairs::Pair{String, String} ...)
     nothing::Nothing
 end
 
+
+function style!(con::AbstractContext, layer::String, anim::KeyFrames)
+    style!(con.window[:children][layer], anim)
+end
+
 """
 ```julia
 style!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames) -> ::Nothing
@@ -487,7 +494,7 @@ move_layer!(con::Context, layer::String, to::Int64) -> ::Nothing
 ```
 Moves the layer up or down, making it more or less visible. `style!` with `z-index` 
 can also be used to rearrange the order of elements.
-```example
+```examove_layer!mple
 
 ```
 """

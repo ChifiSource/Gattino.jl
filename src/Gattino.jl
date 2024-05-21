@@ -78,7 +78,7 @@ module Gattino
 using ToolipsSVG
 import Base: getindex, setindex!, show, display, vcat, push!, hcat, size, reshape, string
 import ToolipsSVG: position, set_position!, set_size!, style!, set_shape, SVGShape
-import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br, gen_ref, rgba
+import ToolipsSVG.ToolipsServables: Servable, Component, AbstractComponent, br, gen_ref, rgba, keyframes, keyframes!, KeyFrames
 
 include("context_plotting.jl")
 
@@ -590,5 +590,5 @@ end
 
 export Group, group!, style!, px, pt, group, layers, context, move_layer!, seconds, percent, Context, Animation, rgba, s, ms
 export delete_layer!, open_layer!, merge!, set!, set_gradient!, set_shape!, compress!, rename_layer!, move_layer!, on, ClientModifier, transition!, next!, set_text!, set_children!
-export hist, scatter, line, svg, div, Component
+export hist, scatter, line, svg, div, Component, keyframes, keyframes!
 end # module
