@@ -1,7 +1,7 @@
 name = "Gattino"
 uuid = "f0fb3ee5-f608-41f3-a42d-dac276373afc"
 authors = ["emmac <emmettgb@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 ToolipsSVG = "8ae86ec9-919d-4ece-9a6d-09b7d28dae11"
