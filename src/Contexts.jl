@@ -123,7 +123,6 @@ push!(comp::Component{:div}, cons::AbstractContext ...) = hcat(comp, cons ...)
 """
 ### Context <: AbstractContext
 - window::Component{:svg}
-- uuid::String
 - dim::Int64{Int64, Int64}
 - margin::Pair{Int64, Int64}
 
@@ -272,6 +271,8 @@ layers(con::AbstractContext, in::String) = [e => comp.name for (e, comp) in enum
 
 getindex(con::AbstractContext, str::String) = con.window[:children][str]
 
+getindex(con::AbstractContext, symb::Symbol) = con.window[symb]
+
 """
 ```julia
 draw!(c::AbstractContext, comps::Vector{<:ToolipsSVG.Servable}) -> ::Nothing
@@ -289,7 +290,6 @@ end
 """
 ### Group <: AbstractContext
 - window::Component{:g}
-- uuid::String
 - dim::Int64{Int64, Int64}
 - margin::Pair{Int64, Int64}
 

@@ -512,7 +512,7 @@ end
 """
 ```julia
 legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right", 
-    sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12) -> ::Nothing
+    sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12, width::Number = Int64(round(con.dim[1]) * .30), height = length(names) * 20) -> ::Nothing
 ```
 Builds a new legend box on `con`, adding a sample of each layer presented in `names`. New elements, including custom elements, 
 can be appended using `append_legend!`. Legend elements can be removed with `remove_legend!`.
@@ -530,7 +530,7 @@ end
 ```
 """
 function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{String, String} ...; align::String = "bottom-right", 
-    sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12)
+    sample_width::Number = 20, sample_height::Number = 20, sample_margin::Number = 12, width::Number = Int64(round(con.dim[1]) * .30), height = length(names) * 20)
     if length(styles) == 0
         styles = ("stroke" => "darkgray", "fill" => "white", "stroke-width" => 2px)
     end
@@ -549,10 +549,8 @@ function legend!(con::AbstractContext, names::Vector{String}, styles::Pair{Strin
     elseif contains(align, "bottom")
         positiony += scaler
     end
-    ww::Int64 = Int64(round(con.dim[1]) * .20)
-    hh::Int64 = length(names) * 20
     legbox::Component{:rect} = ToolipsSVG.rect("legendbg", x = positionx, y = positiony,
-    width = ww, height = hh)
+    width = width, height = height)
     style!(legbox, styles ...)
     push!(legg, legbox)
     [begin
@@ -603,13 +601,13 @@ function append_legend!(con::AbstractContext, name::String, samp::Component{<:An
     n_features::Int64 = length(legend[:children])
     box::Component{:rect} = legend[:children]["legendbg"] 
     positionx, positiony = box[:x], box[:y] + (sample_height + 1) * n_features
-    box[:height] =  sample_height * (n_features + 1)
+    box[:height] +=  sample_height + (sample_margin * 4)
     if typeof(samp) == Component{:g}
         [set_position!(cmp, positionx + sample_margin * e, positiony + sample_margin * (n_features)) for (e, cmp) in enumerate(samp[:children])]
     else
-        set_position!(samp, positionx + sample_margin, positiony + sample_margin * (n_features))
+        set_position!(samp, positionx + sample_margin, positiony + (sample_width * n_features) + sample_margin)
     end
-    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + sample_margin, y = positiony + (sample_width * (n_features) * 1.15) + sample_margin,
+    samplabel = ToolipsSVG.text("$(name)-label", x = positionx + (sample_margin + sample_width) + sample_margin, y = positiony + (sample_width * (n_features + 1)) + sample_margin,
     text = name)
     style!(samplabel, "stroke" => "darkgray", "font-size" => 9pt)
     push!(legend, samp, samplabel)
