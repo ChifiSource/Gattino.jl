@@ -423,11 +423,6 @@ function style!(con::AbstractContext, spairs::Pair{String, String} ...)
     nothing::Nothing
 end
 
-
-function style!(con::AbstractContext, layer::String, anim::KeyFrames)
-    style!(con.window[:children][layer], anim)
-end
-
 """
 ```julia
 style!(con::AbstractContext, layer::String, animation::ToolipsSVG.KeyFrames) -> ::Nothing
